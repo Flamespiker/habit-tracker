@@ -3,7 +3,8 @@
 Personal hobby app. Not commercial. Only user is me.
 
 ## Stack
-- Next.js 15 (App Router, TypeScript)
+- Next.js 16 (App Router, TypeScript)
+- React 19
 - Tailwind CSS + shadcn/ui
 - Supabase — Postgres + Auth (structured data)
 - MongoDB Atlas M0 — AI responses, coaching insights, user preferences (flexible data)
@@ -11,9 +12,16 @@ Personal hobby app. Not commercial. Only user is me.
 - Playwright (E2E tests)
 - GitHub Actions + Claude Code Action (CI/CD + PR reviews)
 
+## shadcn/ui Components (installed)
+badge, button, card, dialog, input, label, progress, sonner, table
+
 ## Folder Structure
 src/app/ → Next.js pages and API routes
-src/app/(auth)/ → login, signup pages
+src/app/habits/ → habits list/detail
+src/app/goals/ → goals list/detail
+src/app/log/ → activity log
+src/app/settings/ → user settings
+src/app/(auth)/ → login, signup
 src/app/api/→ API routes (habits, goals, logs, ai)
 src/components/ui/ → shadcn/ui (don't edit)
 src/components/app/ → layout/, dashboard/, habits/, goals/, log/, ai/
@@ -24,6 +32,9 @@ src/lib/auth/ → auth helpers
 middleware.ts → Supabase auth route protection
 tests/ → Playwright tests
 .github/workflows/ → CI/CD pipelines
+
+## Skills
+/habit-component <ComponentName> → scaffold a new component in src/components/app/habits/
 
 ## Conventions
 - TypeScript strictly — no `any` types
