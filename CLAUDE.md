@@ -24,8 +24,8 @@ src/app/habits/ → habits list implemented (grid of HabitCards, completed today
 src/app/habits/loading.tsx → habits page loading skeleton (header, grid of HabitCardSkeletons)
 src/app/goals/ → goals list implemented (title, status badge, target date, linked habits) + /[id]/page.tsx implemented (title, status badge, target date, description, linked habits with category badge + streak)
 src/app/goals/loading.tsx → goals page loading skeleton (header, list of GoalCardSkeletons)
-src/app/log/ → activity log
-src/app/settings/ → user settings
+src/app/log/ → daily log implemented (habit check-in toggles with strikethrough, notes textarea, disabled submit until Stage 3)
+src/app/settings/ → settings implemented (Profile: display name; Coaching Style: 3 selectable options; Notifications: time input — all saves disabled until Stage 3/4)
 src/app/(auth)/ → login, signup
 src/app/api/→ API routes (habits, goals, logs, ai)
 src/components/ui/ → shadcn/ui (don't edit)
@@ -76,6 +76,7 @@ tests/ → Playwright tests
 - Named export + default export on every component
 - JSDoc on every exported component
 - shadcn Select is NOT installed — use native `<select>` with Tailwind classes that mirror the `Input` component styling
+- shadcn Textarea is NOT installed — use native `<textarea>` with the same Tailwind classes as `Input`, plus `resize-none` and `min-h-[...]`
 - Dynamic route pages call `notFound()` from `next/navigation` for unknown IDs (typed `never`, so TypeScript narrows correctly)
 - DB queries ONLY in src/lib/db/ — never inline in components
 - Auth logic ONLY in src/lib/auth/
