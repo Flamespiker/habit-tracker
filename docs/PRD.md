@@ -13,7 +13,7 @@
   User Stories
 
   Habits
-  - As a user, I want to create habits with a name, frequency, and icon so I can define what I want to track.
+  - As a user, I want to create habits with a name, frequency, and category so I can define what I want to track.
   - As a user, I want to see all my active habits in one place so I can know what's on my plate.
   - As a user, I want to view a habit's streak and completion calendar so I can see patterns over time.
   - As a user, I want to archive habits I'm no longer tracking without losing their history.
@@ -33,6 +33,11 @@
 
   ---
   Core Features
+
+  0. Dashboard
+
+  - Overview of today's habits, stats (total habits, completed today, streak), and weekly activity chart
+  - Route: /
 
   1. Habit Management
 
@@ -296,7 +301,7 @@ Each stage ends with something fully usable — not just wired up, but shippable
 | Stage | Weeks | What you build | What's usable after |
 |---|---|---|---|
 | **1 — Scaffold & Deploy** | 1–2 | Next.js project, Vercel deploy, GitHub repo, CI skeleton, page routes scaffolded | A live URL exists. Every page loads (even if blank). You can push code and see it deploy. |
-| **2 — UI with mock data** | 3–4 | Habit dashboard, HabitCard, check-in button, streak display, goal list, forms — all with hardcoded data | The full app is navigable and looks real. You can demo the UI without a backend. |
+| **2 — UI with mock data** ✓ | 3–4 | Habit dashboard, HabitCard, check-in toggle, streak display, habit detail page, goal list, NewHabitDialog, NewGoalDialog, site-wide Navigation, loading skeletons — all with mock data | The full app is navigable and looks real. You can demo the UI without a backend. |
 | **3 — Supabase backend** | 5–6 | Postgres schema, Supabase client, all API routes for habits/goals/checkins, RLS policies, auth (email/password only), middleware protection | You can sign up, log in, create habits and goals, and check in — data persists. The core loop works end-to-end. |
 | **4 — MongoDB + dual DB** | 7–8 | MongoDB Atlas cluster, Mongoose models, `ai_coaching` and `user_preferences` collections, API routes wired to both DBs | Settings (theme, notifications) persist. The app reads/writes both databases. The AI data layer is ready to receive responses. |
 | **5 — AI coaching** | 9–10 | Claude API integration, streaming coaching nudge on daily log submit, coaching history display, weekly LangChain summary agent | After checking in, you get a real AI coaching message. Past insights are visible on goal detail pages. The app is genuinely useful. |
