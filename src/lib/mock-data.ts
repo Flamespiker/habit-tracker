@@ -1,4 +1,4 @@
-import { Habit } from "./types"
+import { Goal, Habit } from "./types"
 
 const MOCK_USER_ID = "00000000-0000-0000-0000-000000000001"
 
@@ -66,5 +66,52 @@ export const mockHabits: Habit[] = [
     completed_today: false,
     weekly_data: [0, 1, 1, 0, 1, 0, 0],
     created_at: "2026-02-03T07:00:00Z",
+  },
+]
+
+/**
+ * Mock goals for Stage 2 (UI with mock data).
+ * Replace with GET /api/goals once the Supabase layer is wired up.
+ */
+export const mockGoals: Goal[] = [
+  {
+    id: "g1",
+    user_id: MOCK_USER_ID,
+    title: "Run a 5K",
+    description: "Complete a 5K run without stopping.",
+    target_date: "2026-06-01",
+    status: "active",
+    created_at: "2026-01-06T07:00:00Z",
+    habit_ids: ["1"], // Morning Run
+  },
+  {
+    id: "g2",
+    user_id: MOCK_USER_ID,
+    title: "Build a mindfulness practice",
+    description: "Meditate every day for 30 consecutive days.",
+    target_date: "2026-04-30",
+    status: "active",
+    created_at: "2026-01-20T07:00:00Z",
+    habit_ids: ["3"], // Meditate 10 Minutes
+  },
+  {
+    id: "g3",
+    user_id: MOCK_USER_ID,
+    title: "Read 12 books this year",
+    description: "Finish one book per month by reading at least 30 minutes daily.",
+    target_date: "2026-12-31",
+    status: "active",
+    created_at: "2025-12-01T07:00:00Z",
+    habit_ids: ["4"], // Read 30 Minutes
+  },
+  {
+    id: "g4",
+    user_id: MOCK_USER_ID,
+    title: "Improve overall wellbeing",
+    description: null,
+    target_date: null,
+    status: "active",
+    created_at: "2026-02-03T07:00:00Z",
+    habit_ids: [], // standalone — no linked habits yet
   },
 ]
