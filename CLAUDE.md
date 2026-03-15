@@ -6,6 +6,7 @@ Personal hobby app. Not commercial. Only user is me.
 - Next.js 16 (App Router, TypeScript)
 - React 19
 - Tailwind CSS + shadcn/ui
+- next-themes — light/dark/system theming
 - Supabase — Postgres + Auth (structured data)
 - MongoDB Atlas M0 — AI responses, coaching insights, user preferences (flexible data)
 - Vercel (Hobby plan — personal use)
@@ -13,7 +14,7 @@ Personal hobby app. Not commercial. Only user is me.
 - GitHub Actions + Claude Code Action (CI/CD + PR reviews)
 
 ## shadcn/ui Components (installed)
-badge, button, card, dialog, input, label, progress, sonner, table
+badge, button, card, dialog, dropdown-menu, input, label, progress, sonner, table
 
 ## Folder Structure
 src/app/ → Next.js pages and API routes
@@ -24,8 +25,16 @@ src/app/settings/ → user settings
 src/app/(auth)/ → login, signup
 src/app/api/→ API routes (habits, goals, logs, ai)
 src/components/ui/ → shadcn/ui (don't edit)
-src/components/app/ → layout/, dashboard/, habits/, goals/, log/, ai/
-src/lib/types/ → shared TypeScript types
+src/components/app/ → app components (see below)
+src/components/app/theme-provider.tsx → next-themes provider (used in root layout)
+src/components/app/theme-toggle.tsx → light/dark/system dropdown toggle
+src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, weekly chart)
+src/components/app/stats-card.tsx → single metric card (icon + value + subtitle)
+src/components/app/category-filter.tsx → pill buttons to filter habits by category
+src/components/app/weekly-chart.tsx → bar chart of completions over the last 7 days
+src/components/app/habits/ → habit-specific components (HabitCard, etc.)
+src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels)
+src/lib/data.ts → mock/seed data (initialHabits) — replace with API fetching later
 src/lib/db/supabase/ → Supabase query functions
 src/lib/db/mongo/ → MongoDB query functions
 src/lib/auth/ → auth helpers
@@ -36,9 +45,17 @@ tests/ → Playwright tests
 ## Skills
 /habit-component <ComponentName> → scaffold a new component in src/components/app/habits/
 
+## Theming
+- ThemeProvider wraps the app in src/app/layout.tsx with `attribute="class"`, `defaultTheme="dark"`, `enableSystem`
+- `<html>` has `suppressHydrationWarning` to prevent next-themes hydration mismatch
+- Components using `useTheme()` must be 'use client' and guard with a `mounted` state before rendering theme-dependent UI
+
 ## Conventions
 - TypeScript strictly — no `any` types
 - Server Components by default — Client only when needed
+- When adding 'use client', put a comment on the line above explaining why
+- Named export + default export on every component
+- JSDoc on every exported component
 - DB queries ONLY in src/lib/db/ — never inline in components
 - Auth logic ONLY in src/lib/auth/
 - Supabase = relational data | MongoDB = AI/flexible data
