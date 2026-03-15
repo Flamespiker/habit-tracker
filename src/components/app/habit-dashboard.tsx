@@ -10,7 +10,6 @@ import { StatsCard } from "./stats-card"
 import { WeeklyChart } from "./weekly-chart"
 import { Habit, Category } from "@/lib/types"
 import { mockHabits } from "@/lib/mock-data"
-import { ThemeToggle } from "./theme-toggle"
 import { NewHabitDialog } from "./habits/NewHabitDialog"
 
 /**
@@ -60,16 +59,13 @@ export function HabitDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <header className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Habit Tracker
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Build better habits, one day at a time
-            </p>
-          </div>
-          <ThemeToggle />
+        <header className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Habit Tracker
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Build better habits, one day at a time
+          </p>
         </header>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
