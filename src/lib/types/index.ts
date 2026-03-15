@@ -19,6 +19,22 @@ export const categoryLabels: Record<Category, string> = {
   learning: "Learning",
 }
 
+/** Goal status values matching the `goals.status` column. */
+export type GoalStatus = "active" | "completed" | "abandoned"
+
+/** A user goal. Mirrors the `goals` table in Supabase. */
+export interface Goal {
+  id: string
+  user_id: string
+  title: string
+  description: string | null
+  target_date: string | null
+  status: GoalStatus
+  created_at: string
+  /** UI-only — not stored in the DB. Derived from the `goal_habits` join table. */
+  habit_ids: string[]
+}
+
 /** A tracked habit. Mirrors the `habits` table in Supabase. */
 export interface Habit {
   id: string

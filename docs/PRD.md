@@ -308,6 +308,9 @@ Each stage ends with something fully usable — not just wired up, but shippable
   like? What triggers a goal as "completed"? Parking these explicitly prevents them from becoming silent assumptions in
   the code.
 
+- Goal → habit linking: using `habit_ids: string[]` (UI-only array) in Phase 2 mock data. Phase 3 will implement via join table in Supabase.
+- GoalStatus values: `active | completed | abandoned` (not `paused` — removed from type definition).
+
 ## What "done" looks like for v1
 I can open the app on my phone, log all my habits for the day, 
 see my current streaks, and get a coaching nudge — with no 
