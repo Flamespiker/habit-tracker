@@ -19,7 +19,7 @@ badge, button, card, dialog, dropdown-menu, input, label, progress, sonner, tabl
 ## Folder Structure
 src/app/ → Next.js pages and API routes
 src/app/habits/ → habits list (stub) + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
-src/app/goals/ → goals list/detail
+src/app/goals/ → goals list implemented (title, status badge, target date, linked habits) + detail stub
 src/app/log/ → activity log
 src/app/settings/ → user settings
 src/app/(auth)/ → login, signup
@@ -34,8 +34,9 @@ src/components/app/category-filter.tsx → pill buttons to filter habits by cate
 src/components/app/weekly-chart.tsx → bar chart of completions over the last 7 days
 src/components/app/habits/HabitCard.tsx → card showing name (links to /habits/[id]), category badge, streak, progress bar, check-in toggle
 src/components/app/habits/NewHabitDialog.tsx → trigger button + dialog form to create a habit (name, category, frequency)
-src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels)
-src/lib/mock-data.ts → mock habits for Stage 2 UI (replace with GET /api/habits later)
+src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form to create a goal (title, target date, status, linked habits multi-select)
+src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus)
+src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
 src/lib/db/supabase/ → Supabase query functions
 src/lib/db/mongo/ → MongoDB query functions
@@ -55,6 +56,11 @@ tests/ → Playwright tests
 ## Habit Type Notes
 - `completed_today` and `weekly_data` on `Habit` are UI-only — not stored in the `habits` table; derived from `checkins`
 - Habit components take `habit: Habit` (full object) + `onToggle: (id: string) => void` — never individual fields
+
+## Goal Type Notes
+- `GoalStatus` = `"active" | "completed" | "abandoned"` — "paused" is not a valid value
+- `habit_ids: string[]` on `Goal` is UI-only — not stored in the `goals` table; derived from the `goal_habits` join table
+- `habit_ids: []` means a standalone goal with no linked habits
 
 ## Conventions
 - TypeScript strictly — no `any` types
