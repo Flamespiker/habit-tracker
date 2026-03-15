@@ -11,6 +11,7 @@ import { WeeklyChart } from "./weekly-chart"
 import { Habit, Category } from "@/lib/types"
 import { mockHabits } from "@/lib/mock-data"
 import { ThemeToggle } from "./theme-toggle"
+import { NewHabitDialog } from "./habits/NewHabitDialog"
 
 /**
  * Main dashboard view showing habit stats, a filterable habit list, and a weekly activity chart.
@@ -85,7 +86,10 @@ export function HabitDashboard() {
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-medium text-foreground">Your Habits</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-medium text-foreground">Your Habits</h2>
+                <NewHabitDialog />
+              </div>
               <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
             </div>
 
