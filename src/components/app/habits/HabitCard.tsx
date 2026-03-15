@@ -1,16 +1,71 @@
-// TODO: Display a single habit's name, streak, and completion status for today
+// TODO: Display a single habit card with its category badge, name, streak, weekly progress bar, and a check-in toggle button.
+
+// 'use client' required: check-in button uses onClick to call the onToggle callback.
+"use client"
+
+import { Check, Flame } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { cn } from "@/lib/utils"
+import { Habit, categoryColors, categoryLabels } from "@/lib/types"
 
 interface HabitCardProps {
-  id: string;
-  name: string;
-  streak: number;
-  completedToday: boolean;
+  habit: Habit
+  onToggle: (id: string) => void
 }
 
-export function HabitCard({ id, name, streak, completedToday }: HabitCardProps) {
+/**
+ * Displays a single habit with its category, name, current streak, weekly progress,
+ * and a button to toggle today's completion.
+ */
+export function HabitCard({ habit, onToggle }: HabitCardProps) {
+  const completedDays = habit.weekly_data.filter((v) => v > 0).length
+  const progressPct = Math.min(Math.round((completedDays / habit.target_days) * 100), 100)
+  const colors = categoryColors[habit.category]
+
   return (
-    <div className="rounded-lg border bg-card p-4 shadow-sm">
-      <p>HabitCard</p>
-    </div>
-  );
+    <Card className="border-border bg-card">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <Badge
+              variant="outline"
+              className={cn(colors.bg, colors.text, colors.border)}
+            >
+              {categoryLabels[habit.category]}
+            </Badge>
+            <h3 className="mt-2 truncate text-sm font-medium text-foreground">
+              {habit.name}
+            </h3>
+            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+              <Flame className="h-3.5 w-3.5 text-orange-500" />
+              <span>{habit.streak} day streak</span>
+            </div>
+          </div>
+
+          <Button
+            variant={habit.completed_today ? "default" : "outline"}
+            size="icon"
+            onClick={() => onToggle(habit.id)}
+            aria-label={habit.completed_today ? "Mark incomplete" : "Mark complete"}
+            className="mt-0.5 shrink-0"
+          >
+            <Check />
+          </Button>
+        </div>
+
+        <div className="mt-4">
+          <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
+            <span>This week</span>
+            <span>{completedDays}/{habit.target_days} days</span>
+          </div>
+          <Progress value={progressPct} />
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
+
+export default HabitCard

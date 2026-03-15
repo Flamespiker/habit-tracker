@@ -153,13 +153,12 @@
 | `id` | `uuid` PK | Unique habit ID |
 | `user_id` | `uuid` FK → users | Owner of the habit |
 | `name` | `text` | Display name of the habit |
-| `description` | `text \| null` | Optional longer description |
 | `frequency` | `text` | `daily`, `weekly`, or `custom` |
-| `target_count` | `int` | How many times per frequency period |
-| `color` | `text \| null` | Hex color code for UI display |
-| `icon` | `text \| null` | Icon identifier (e.g. lucide icon name) |
+| `category` | `text` | Habit category (`fitness`, `health`, `mindfulness`, `productivity`, `learning`) |
+| `target_days` | `int` | Target number of days to complete per frequency period |
 | `streak` | `int` | Current consecutive completion streak |
-| `archived` | `bool` | Whether the habit is archived |
+| `completed_today` | `bool` | Whether the habit has been completed today |
+| `weekly_data` | `int[]` | Completion counts for the last 7 days (Mon–Sun) |
 | `created_at` | `timestamptz` | When the habit was created |
 
 ---

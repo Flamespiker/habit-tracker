@@ -19,18 +19,19 @@ export const categoryLabels: Record<Category, string> = {
   learning: "Learning",
 }
 
-/** A tracked habit with progress, streak, and weekly activity data. */
+/** A tracked habit. Mirrors the `habits` table in Supabase. */
 export interface Habit {
   id: string
+  user_id: string
   name: string
+  frequency: "daily" | "weekly" | "custom"
   category: Category
-  /** Daily target count (e.g. 8 glasses of water). */
-  target: number
-  /** Units completed today. */
-  completed: number
-  completedToday: boolean
+  /** Target number of days to complete this habit per frequency period. */
+  target_days: number
   streak: number
-  bestStreak: number
-  /** Completion counts for the last 7 days (Mon–Sun). */
-  weeklyData: number[]
+  /** UI-only — not stored in the DB. Derived from today's row in the `checkins` table. */
+  completed_today: boolean
+  /** UI-only — not stored in the DB. Derived from the last 7 rows in the `checkins` table. */
+  weekly_data: number[]
+  created_at: string
 }

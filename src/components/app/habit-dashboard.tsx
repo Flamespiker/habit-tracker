@@ -3,20 +3,20 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Target, Flame, CheckCircle2, Trophy } from "lucide-react"
+import { Target, Flame, CheckCircle2 } from "lucide-react"
 import { HabitCard } from "./habits/HabitCard"
 import { CategoryFilter } from "./category-filter"
 import { StatsCard } from "./stats-card"
 import { WeeklyChart } from "./weekly-chart"
 import { Habit, Category } from "@/lib/types"
-import { initialHabits } from "@/lib/data"
+import { mockHabits } from "@/lib/mock-data"
 import { ThemeToggle } from "./theme-toggle"
 
 /**
  * Main dashboard view showing habit stats, a filterable habit list, and a weekly activity chart.
  */
 export function HabitDashboard() {
-  const [habits, setHabits] = useState<Habit[]>(initialHabits)
+  const [habits, setHabits] = useState<Habit[]>(mockHabits)
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all")
 
   const filteredHabits = useMemo(() => {
@@ -26,17 +26,16 @@ export function HabitDashboard() {
 
   const stats = useMemo(() => {
     const totalHabits = habits.length
-    const completedToday = habits.filter((h) => h.completedToday).length
+    const completedToday = habits.filter((h) => h.completed_today).length
     const completionRate = Math.round((completedToday / totalHabits) * 100)
     const totalStreak = habits.reduce((sum, h) => sum + h.streak, 0)
-    const bestStreak = Math.max(...habits.map((h) => h.bestStreak))
-    return { totalHabits, completedToday, completionRate, totalStreak, bestStreak }
+    return { totalHabits, completedToday, completionRate, totalStreak }
   }, [habits])
 
   const weeklyData = useMemo(() => {
     const data = [0, 0, 0, 0, 0, 0, 0]
     habits.forEach((habit) => {
-      habit.weeklyData.forEach((val, idx) => {
+      habit.weekly_data.forEach((val, idx) => {
         if (val > 0) data[idx]++
       })
     })
@@ -49,9 +48,8 @@ export function HabitDashboard() {
         habit.id === id
           ? {
               ...habit,
-              completedToday: !habit.completedToday,
-              streak: !habit.completedToday ? habit.streak + 1 : habit.streak - 1,
-              completed: !habit.completedToday ? habit.target : 0,
+              completed_today: !habit.completed_today,
+              streak: !habit.completed_today ? habit.streak + 1 : habit.streak - 1,
             }
           : habit
       )
@@ -82,7 +80,6 @@ export function HabitDashboard() {
             icon={CheckCircle2}
           />
           <StatsCard title="Total Streak Days" value={stats.totalStreak} icon={Flame} />
-          <StatsCard title="Best Streak" value={`${stats.bestStreak} days`} icon={Trophy} />
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
@@ -96,10 +93,8 @@ export function HabitDashboard() {
               {filteredHabits.map((habit) => (
                 <HabitCard
                   key={habit.id}
-                  id={habit.id}
-                  name={habit.name}
-                  streak={habit.streak}
-                  completedToday={habit.completedToday}
+                  habit={habit}
+                  onToggle={toggleHabit}
                 />
               ))}
             </div>
