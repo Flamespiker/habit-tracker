@@ -18,6 +18,7 @@ badge, button, card, dialog, dropdown-menu, input, label, progress, sonner, tabl
 
 ## Folder Structure
 src/app/ → Next.js pages and API routes
+src/app/page.tsx → dashboard (route: /)
 src/app/habits/ → habits list (stub) + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
 src/app/goals/ → goals list implemented (title, status badge, target date, linked habits) + detail stub
 src/app/log/ → activity log
@@ -26,6 +27,7 @@ src/app/(auth)/ → login, signup
 src/app/api/→ API routes (habits, goals, logs, ai)
 src/components/ui/ → shadcn/ui (don't edit)
 src/components/app/ → app components (see below)
+src/components/app/Navigation.tsx → sticky site-wide nav bar (links to /, /habits, /goals, /log, /settings; active route highlighting; mobile hamburger menu)
 src/components/app/theme-provider.tsx → next-themes provider (used in root layout)
 src/components/app/theme-toggle.tsx → light/dark/system dropdown toggle
 src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, weekly chart)

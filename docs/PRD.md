@@ -1,6 +1,6 @@
  Product Requirements Document — Habit & Goal Tracker
 
-  Last updated: 2026-03-11 | Status: In development | Owner: Personal / solo use
+  Last updated: 2026-03-15 | Status: In development | Owner: Personal / solo use
 
   ---
   Problem Statement
@@ -37,7 +37,7 @@
   1. Habit Management
 
   - Create / edit / archive habits
-  - Fields: name, description, frequency (daily / weekly / custom), target count, color, icon
+  - Fields: name, frequency (daily / weekly / custom), category, target_days
   - Routes: /habits, /habits/new, /habits/[id], /habits/[id]/edit
 
   2. Goal Management
@@ -156,10 +156,11 @@
 | `frequency` | `text` | `daily`, `weekly`, or `custom` |
 | `category` | `text` | Habit category (`fitness`, `health`, `mindfulness`, `productivity`, `learning`) |
 | `target_days` | `int` | Target number of days to complete per frequency period |
-| `streak` | `int` | Current consecutive completion streak |
-| `completed_today` | `bool` | Whether the habit has been completed today |
-| `weekly_data` | `int[]` | Completion counts for the last 7 days (Mon–Sun) |
+| `streak` | `int` | Cached consecutive completion streak (derived from `checkins`) |
+| `archived` | `bool` | Whether the habit is archived (hidden from active list) |
 | `created_at` | `timestamptz` | When the habit was created |
+
+> **UI-only fields** (not stored in `habits`): `completed_today` (derived from today's `checkins` row) and `weekly_data` (derived from the last 7 `checkins` rows). These exist on the `Habit` TypeScript type for convenience but are never written to this table.
 
 ---
 
@@ -236,7 +237,7 @@
 |---|---|---|
 | `_id` | `ObjectId` | MongoDB document ID |
 | `user_id` | `string` | Supabase user UUID (unique index) |
-| `theme` | `string` | `light` or `dark` |
+| `theme` | `string` | `light`, `dark`, or `system` |
 | `notifications_enabled` | `bool` | Whether browser notifications are on |
 | `updated_at` | `Date` | Last time preferences were changed |
 
@@ -296,7 +297,7 @@ Each stage ends with something fully usable — not just wired up, but shippable
 |---|---|---|---|
 | **1 — Scaffold & Deploy** | 1–2 | Next.js project, Vercel deploy, GitHub repo, CI skeleton, page routes scaffolded | A live URL exists. Every page loads (even if blank). You can push code and see it deploy. |
 | **2 — UI with mock data** | 3–4 | Habit dashboard, HabitCard, check-in button, streak display, goal list, forms — all with hardcoded data | The full app is navigable and looks real. You can demo the UI without a backend. |
-| **3 — Supabase backend** | 5–6 | Postgres schema, Supabase client, all API routes for habits/goals/checkins, RLS policies, auth (email + Google OAuth), middleware protection | You can sign up, log in, create habits and goals, and check in — data persists. The core loop works end-to-end. |
+| **3 — Supabase backend** | 5–6 | Postgres schema, Supabase client, all API routes for habits/goals/checkins, RLS policies, auth (email/password only), middleware protection | You can sign up, log in, create habits and goals, and check in — data persists. The core loop works end-to-end. |
 | **4 — MongoDB + dual DB** | 7–8 | MongoDB Atlas cluster, Mongoose models, `ai_coaching` and `user_preferences` collections, API routes wired to both DBs | Settings (theme, notifications) persist. The app reads/writes both databases. The AI data layer is ready to receive responses. |
 | **5 — AI coaching** | 9–10 | Claude API integration, streaming coaching nudge on daily log submit, coaching history display, weekly LangChain summary agent | After checking in, you get a real AI coaching message. Past insights are visible on goal detail pages. The app is genuinely useful. |
 | **6 — Tests & CI/CD** | 11–12 | Playwright test suite (login, habit creation, check-in, goal creation), GitHub Actions pipeline, Claude PR review agent | Every push runs tests automatically. PRs get AI review. Broken builds are caught before merge. |
