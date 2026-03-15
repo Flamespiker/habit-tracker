@@ -20,8 +20,9 @@ badge, button, card, dialog, dropdown-menu, input, label, progress, skeleton, so
 src/app/ → Next.js pages and API routes
 src/app/page.tsx → dashboard (route: /)
 src/app/loading.tsx → dashboard loading skeleton (stats cards, habit card grid, chart column)
-src/app/habits/ → habits list (stub) + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
-src/app/goals/ → goals list implemented (title, status badge, target date, linked habits) + detail stub
+src/app/habits/ → habits list implemented (grid of HabitCards, completed today count, NewHabitDialog) + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
+src/app/habits/loading.tsx → habits page loading skeleton (header, grid of HabitCardSkeletons)
+src/app/goals/ → goals list implemented (title, status badge, target date, linked habits) + /[id]/page.tsx implemented (title, status badge, target date, description, linked habits with category badge + streak)
 src/app/goals/loading.tsx → goals page loading skeleton (header, list of GoalCardSkeletons)
 src/app/log/ → activity log
 src/app/settings/ → user settings

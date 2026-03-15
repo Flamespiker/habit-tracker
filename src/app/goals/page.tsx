@@ -1,5 +1,6 @@
 // TODO: Replace mockGoals/mockHabits with direct src/lib/db/supabase/ calls once Stage 3 is built.
 
+import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -52,7 +53,12 @@ export default function GoalsPage() {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-foreground">{goal.title}</p>
+                    <Link
+                      href={`/goals/${goal.id}`}
+                      className="truncate font-medium text-foreground hover:underline"
+                    >
+                      {goal.title}
+                    </Link>
                     {linkedHabits.length > 0 ? (
                       <p className="mt-1 text-xs text-muted-foreground">
                         {linkedHabits.join(" · ")}
