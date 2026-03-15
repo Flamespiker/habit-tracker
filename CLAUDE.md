@@ -14,13 +14,15 @@ Personal hobby app. Not commercial. Only user is me.
 - GitHub Actions + Claude Code Action (CI/CD + PR reviews)
 
 ## shadcn/ui Components (installed)
-badge, button, card, dialog, dropdown-menu, input, label, progress, sonner, table
+badge, button, card, dialog, dropdown-menu, input, label, progress, skeleton, sonner, table
 
 ## Folder Structure
 src/app/ → Next.js pages and API routes
 src/app/page.tsx → dashboard (route: /)
+src/app/loading.tsx → dashboard loading skeleton (stats cards, habit card grid, chart column)
 src/app/habits/ → habits list (stub) + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
 src/app/goals/ → goals list implemented (title, status badge, target date, linked habits) + detail stub
+src/app/goals/loading.tsx → goals page loading skeleton (header, list of GoalCardSkeletons)
 src/app/log/ → activity log
 src/app/settings/ → user settings
 src/app/(auth)/ → login, signup
@@ -35,7 +37,9 @@ src/components/app/stats-card.tsx → single metric card (icon + value + subtitl
 src/components/app/category-filter.tsx → pill buttons to filter habits by category
 src/components/app/weekly-chart.tsx → bar chart of completions over the last 7 days
 src/components/app/habits/HabitCard.tsx → card showing name (links to /habits/[id]), category badge, streak, progress bar, check-in toggle
+src/components/app/habits/HabitCardSkeleton.tsx → loading skeleton matching HabitCard shape
 src/components/app/habits/NewHabitDialog.tsx → trigger button + dialog form to create a habit (name, category, frequency)
+src/components/app/goals/GoalCardSkeleton.tsx → loading skeleton matching goal row shape (title, linked habits, status badge, date)
 src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form to create a goal (title, target date, status, linked habits multi-select)
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus)
 src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
@@ -85,7 +89,6 @@ npm run dev → dev server
 npm run build → production build
 npx playwright test → E2E tests
 npx tsc --noEmit → type check
-```
 
 ---
 
