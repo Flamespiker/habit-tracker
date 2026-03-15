@@ -3,6 +3,7 @@
 // 'use client' required: check-in button uses onClick to call the onToggle callback.
 "use client"
 
+import Link from "next/link"
 import { Check, Flame } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -36,9 +37,12 @@ export function HabitCard({ habit, onToggle }: HabitCardProps) {
             >
               {categoryLabels[habit.category]}
             </Badge>
-            <h3 className="mt-2 truncate text-sm font-medium text-foreground">
+            <Link
+              href={`/habits/${habit.id}`}
+              className="mt-2 block truncate text-sm font-medium text-foreground hover:underline"
+            >
               {habit.name}
-            </h3>
+            </Link>
             <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
               <Flame className="h-3.5 w-3.5 text-orange-500" />
               <span>{habit.streak} day streak</span>
