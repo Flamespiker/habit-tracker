@@ -18,7 +18,7 @@ badge, button, card, dialog, dropdown-menu, input, label, progress, sonner, tabl
 
 ## Folder Structure
 src/app/ → Next.js pages and API routes
-src/app/habits/ → habits list/detail
+src/app/habits/ → habits list (stub) + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
 src/app/goals/ → goals list/detail
 src/app/log/ → activity log
 src/app/settings/ → user settings
@@ -32,7 +32,8 @@ src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, we
 src/components/app/stats-card.tsx → single metric card (icon + value + subtitle)
 src/components/app/category-filter.tsx → pill buttons to filter habits by category
 src/components/app/weekly-chart.tsx → bar chart of completions over the last 7 days
-src/components/app/habits/HabitCard.tsx → card showing name, category badge, streak, progress bar, check-in toggle
+src/components/app/habits/HabitCard.tsx → card showing name (links to /habits/[id]), category badge, streak, progress bar, check-in toggle
+src/components/app/habits/NewHabitDialog.tsx → trigger button + dialog form to create a habit (name, category, frequency)
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels)
 src/lib/mock-data.ts → mock habits for Stage 2 UI (replace with GET /api/habits later)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
@@ -61,6 +62,8 @@ tests/ → Playwright tests
 - When adding 'use client', put a comment on the line above explaining why
 - Named export + default export on every component
 - JSDoc on every exported component
+- shadcn Select is NOT installed — use native `<select>` with Tailwind classes that mirror the `Input` component styling
+- Dynamic route pages call `notFound()` from `next/navigation` for unknown IDs (typed `never`, so TypeScript narrows correctly)
 - DB queries ONLY in src/lib/db/ — never inline in components
 - Auth logic ONLY in src/lib/auth/
 - Supabase = relational data | MongoDB = AI/flexible data
