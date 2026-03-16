@@ -44,18 +44,31 @@ export function HabitDashboard({ initialHabits }: HabitDashboardProps) {
     return data
   }, [habits])
 
-  const toggleHabit = (id: string) => {
+  const toggleHabit = async (id: string) => {
+    const habit = habits.find((h) => h.id === id)
+    if (!habit) return
+    const newCompleted = !habit.completed_today
+
+    // Optimistic update — UI responds immediately
     setHabits((prev) =>
-      prev.map((habit) =>
-        habit.id === id
-          ? {
-              ...habit,
-              completed_today: !habit.completed_today,
-              streak: !habit.completed_today ? habit.streak + 1 : habit.streak - 1,
-            }
-          : habit
+      prev.map((h) =>
+        h.id === id
+          ? { ...h, completed_today: newCompleted, streak: newCompleted ? h.streak + 1 : h.streak - 1 }
+          : h
       )
     )
+
+    // Persist to Supabase
+    const today = new Date().toISOString().split('T')[0]
+    try {
+      await fetch('/api/checkins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habit_id: id, date: today, completed: newCompleted }),
+      })
+    } catch (err) {
+      console.error('[toggleHabit]', err)
+    }
   }
 
   return (
