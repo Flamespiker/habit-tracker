@@ -22,12 +22,13 @@ src/app/page.tsx → dashboard (route: /) — async Server Component; fetches ha
 src/app/loading.tsx → dashboard loading skeleton (stats cards, habit card grid, chart column)
 src/app/habits/ → habits list — async Server Component fetching real data; delegates toggle state to HabitsClient + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
 src/app/habits/loading.tsx → habits page loading skeleton (header, grid of HabitCardSkeletons)
-src/app/goals/ → goals list implemented (title, status badge, target date, linked habits) + /[id]/page.tsx implemented (title, status badge, target date, description, linked habits with category badge + streak)
+src/app/goals/ → goals list — async Server Component fetching real data; delegates list state to GoalsClient + /[id]/page.tsx implemented (title, status badge, target date, description, linked habits with category badge + streak)
 src/app/goals/loading.tsx → goals page loading skeleton (header, list of GoalCardSkeletons)
 src/app/log/ → daily log implemented (habit check-in toggles with strikethrough, notes textarea, disabled submit until Stage 3)
 src/app/settings/ → settings implemented (Profile: display name; Coaching Style: 3 selectable options; Notifications: time input — all saves disabled until Stage 3/4)
 src/app/(auth)/ → login, signup
 src/app/api/habits/route.ts → POST /api/habits (create habit, uses admin client, returns mapped Habit)
+src/app/api/goals/route.ts → POST /api/goals (create goal + goal_habits rows, uses admin client, returns mapped Goal)
 src/components/ui/ → shadcn/ui (don't edit)
 src/components/app/ → app components (see below)
 src/components/app/Navigation.tsx → sticky site-wide nav bar (links to /, /habits, /goals, /log, /settings; active route highlighting; mobile hamburger menu)
@@ -41,12 +42,13 @@ src/components/app/habits/HabitCard.tsx → card showing name (links to /habits/
 src/components/app/habits/HabitCardSkeleton.tsx → loading skeleton matching HabitCard shape
 src/components/app/habits/HabitsClient.tsx → Client Component managing toggle state; receives initialHabits from the Server Component page
 src/components/app/habits/NewHabitDialog.tsx → trigger button + dialog form; POSTs to /api/habits and calls onAdd(habit) on success
+src/components/app/goals/GoalsClient.tsx → Client Component managing goals state; receives initialGoals + habits from the Server Component page; wires onAdd to NewGoalDialog
 src/components/app/goals/GoalCardSkeleton.tsx → loading skeleton matching goal row shape (title, linked habits, status badge, date)
-src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form to create a goal (title, target date, status, linked habits multi-select)
+src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form; POSTs to /api/goals and calls onAdd(goal) on success
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus) + database.types.ts (Supabase-generated; Tables<T>, TablesInsert<T>, TablesUpdate<T>)
 src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
-src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS, temp until Week 6), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal), checkins.ts (getCheckins, createCheckin, updateCheckin)
+src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS, temp until Week 6), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getCheckins, createCheckin, updateCheckin)
 src/lib/db/mongo/ → MongoDB query functions
 src/lib/auth/ → auth helpers
 middleware.ts → Supabase auth route protection
@@ -70,6 +72,7 @@ tests/ → Playwright tests
 - `GoalStatus` = `"active" | "completed" | "abandoned"` — "paused" is not a valid value
 - `habit_ids: string[]` on `Goal` is UI-only — not stored in the `goals` table; derived from the `goal_habits` join table
 - `habit_ids: []` means a standalone goal with no linked habits
+- `description` on `Goal` is not in the DB schema — `toGoal()` stubs it to `null`; `status` is `string` in DB, cast to `GoalStatus` in `toGoal()`
 
 ## Conventions
 - TypeScript strictly — no `any` types
@@ -88,6 +91,13 @@ tests/ → Playwright tests
 - Client Components → fetch API route → lib/db/
 - Server Components → call lib/db/ directly
 - Until Week 6 auth: all lib/db/ callers pass `createAdminClient()` (bypasses RLS). Query functions accept an optional `client` param — pass admin client explicitly, falls back to server client when omitted.
+
+## Server/Client Split Pattern
+List pages with a creation dialog always split into two files:
+1. `src/app/[route]/page.tsx` — async Server Component; fetches data with admin client, renders `<XxxClient initialItems={...} />`
+2. `src/components/app/[domain]/XxxClient.tsx` — Client Component; holds `useState`, passes `onAdd={(item) => setItems(prev => [...prev, item])}` to the dialog
+This is required because `async` server fetching and `useState` cannot coexist in one file.
+Current examples: HabitsClient, GoalsClient, HabitDashboard (initialHabits prop).
 
 ## Commands
 npm run dev → dev server
