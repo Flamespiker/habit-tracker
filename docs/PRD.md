@@ -302,8 +302,8 @@ Each stage ends with something fully usable — not just wired up, but shippable
 | Stage | Weeks | What you build | What's usable after |
 |---|---|---|---|
 | **1 — Scaffold & Deploy** | 1–2 | Next.js project, Vercel deploy, GitHub repo, CI skeleton, page routes scaffolded | A live URL exists. Every page loads (even if blank). You can push code and see it deploy. |
-| **2 — UI with mock data** (in progress) | 3–4 | Habit dashboard, HabitCard, check-in toggle, streak display, habit detail page, goal list + detail, NewHabitDialog, NewGoalDialog, daily log, settings, site-wide Navigation, loading skeletons — all with mock data. Remaining: auth pages only. | The full app is navigable and looks real. You can demo the UI without a backend. |
-| **3 — Supabase backend** | 5–6 | Postgres schema, Supabase client, all API routes for habits/goals/checkins, RLS policies, auth (email/password only), middleware protection | You can sign up, log in, create habits and goals, and check in — data persists. The core loop works end-to-end. |
+| **2 — UI with mock data** ✅ | 3–4 | Habit dashboard, HabitCard, check-in toggle, streak display, habit detail page, goal list + detail, NewHabitDialog, NewGoalDialog, daily log, settings, site-wide Navigation, loading skeletons — all with mock data. Remaining: auth pages only. | The full app is navigable and looks real. You can demo the UI without a backend. |
+| **3 — Supabase backend** (in progress) | 5–6 | Postgres schema ✅, Supabase client ✅, generated DB types ✅, habits query functions ✅, goals/checkins query functions ✅, POST /api/habits ✅, dashboard + habits page fetch real data ✅ — remaining: goals/checkins API routes, RLS policies, auth (email/password), middleware protection | You can sign up, log in, create habits and goals, and check in — data persists. The core loop works end-to-end. |
 | **4 — MongoDB + dual DB** | 7–8 | MongoDB Atlas cluster, Mongoose models, `ai_coaching` and `user_preferences` collections, API routes wired to both DBs | Settings (theme, notifications) persist. The app reads/writes both databases. The AI data layer is ready to receive responses. |
 | **5 — AI coaching** | 9–10 | Claude API integration, streaming coaching nudge on daily log submit, coaching history display, weekly LangChain summary agent | After checking in, you get a real AI coaching message. Past insights are visible on goal detail pages. The app is genuinely useful. |
 | **6 — Tests & CI/CD** | 11–12 | Playwright test suite (login, habit creation, check-in, goal creation), GitHub Actions pipeline, Claude PR review agent | Every push runs tests automatically. PRs get AI review. Broken builds are caught before merge. |
@@ -317,6 +317,7 @@ Each stage ends with something fully usable — not just wired up, but shippable
 
 - Goal → habit linking: using `habit_ids: string[]` (UI-only array) in Phase 2 mock data. Phase 3 will implement via join table in Supabase.
 - GoalStatus values: `active | completed | abandoned` (not `paused` — removed from type definition).
+- Category DB constraint (`habits_category_check`): was missing `fitness` — manually added. Constraint now matches the `Category` TS type: `health | fitness | mindfulness | productivity | learning`. Keep these in sync when adding categories.
 - Streak storage: streak is **not stored** in the `habits` table. It is computed at read time from the `checkins` table. The open question is the calculation rule — consecutive days using UTC midnight, or the user's local midnight?
 
 ## What "done" looks like for v1

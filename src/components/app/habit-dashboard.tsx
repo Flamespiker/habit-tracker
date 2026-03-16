@@ -1,5 +1,4 @@
 // 'use client' required: manages habit state (useState) and derives stats/chart data (useMemo).
-// TODO: Replace initialHabits with a fetch to /api/habits once the Supabase layer is wired up.
 "use client"
 
 import { useState, useMemo } from "react"
@@ -9,14 +8,17 @@ import { CategoryFilter } from "./category-filter"
 import { StatsCard } from "./stats-card"
 import { WeeklyChart } from "./weekly-chart"
 import { Habit, Category } from "@/lib/types"
-import { mockHabits } from "@/lib/mock-data"
 import { NewHabitDialog } from "./habits/NewHabitDialog"
+
+interface HabitDashboardProps {
+  initialHabits: Habit[]
+}
 
 /**
  * Main dashboard view showing habit stats, a filterable habit list, and a weekly activity chart.
  */
-export function HabitDashboard() {
-  const [habits, setHabits] = useState<Habit[]>(mockHabits)
+export function HabitDashboard({ initialHabits }: HabitDashboardProps) {
+  const [habits, setHabits] = useState<Habit[]>(initialHabits)
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all")
 
   const filteredHabits = useMemo(() => {
@@ -84,7 +86,7 @@ export function HabitDashboard() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-medium text-foreground">Your Habits</h2>
-                <NewHabitDialog />
+                <NewHabitDialog onAdd={(habit) => setHabits((prev) => [...prev, habit])} />
               </div>
               <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
             </div>
