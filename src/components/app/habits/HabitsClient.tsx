@@ -19,20 +19,31 @@ export function HabitsClient({ initialHabits }: HabitsClientProps) {
 
   const completedToday = habits.filter((h) => h.completed_today).length
 
-  // TODO (Week 6): replace with PATCH /api/habits/[id]/checkins; remove local useState
-  // and derive completed_today + streak from the Supabase checkins table instead.
-  const toggleHabit = (id: string) => {
+  const toggleHabit = async (id: string) => {
+    const habit = habits.find((h) => h.id === id)
+    if (!habit) return
+    const newCompleted = !habit.completed_today
+
+    // Optimistic update — UI responds immediately
     setHabits((prev) =>
       prev.map((h) =>
         h.id === id
-          ? {
-              ...h,
-              completed_today: !h.completed_today,
-              streak: !h.completed_today ? h.streak + 1 : h.streak - 1,
-            }
+          ? { ...h, completed_today: newCompleted, streak: newCompleted ? h.streak + 1 : h.streak - 1 }
           : h
       )
     )
+
+    // Persist to Supabase
+    const today = new Date().toISOString().split('T')[0]
+    try {
+      await fetch('/api/checkins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habit_id: id, date: today, completed: newCompleted }),
+      })
+    } catch (err) {
+      console.error('[toggleHabit]', err)
+    }
   }
 
   return (

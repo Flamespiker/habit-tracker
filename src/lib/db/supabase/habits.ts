@@ -12,12 +12,18 @@ export type HabitRow = Tables<'habits'>
 type CreateHabitInput = TablesInsert<'habits'>
 type UpdateHabitInput = Omit<TablesUpdate<'habits'>, 'id' | 'user_id' | 'created_at'>
 
+/** Minimal checkin shape needed by toHabit — avoids importing from checkins.ts. */
+type TodayCheckin = { habit_id: string; completed: boolean }
+
 /**
  * Maps a DB habit row to the app-level Habit type.
- * UI-only fields (streak, completed_today, weekly_data) are stubbed to zero values here —
- * TODO (Week 6): derive these from the checkins table before returning.
+ * Pass `todayCheckins` (all checkins for the user today) to populate `completed_today`.
+ * `streak` and `weekly_data` remain stubbed — TODO (Week 6): derive from checkins.
  */
-export function toHabit(row: HabitRow): Habit {
+export function toHabit(row: HabitRow, todayCheckins?: TodayCheckin[]): Habit {
+  const completed_today =
+    todayCheckins?.some((c) => c.habit_id === row.id && c.completed) ?? false
+
   return {
     id: row.id,
     user_id: row.user_id,
@@ -27,7 +33,7 @@ export function toHabit(row: HabitRow): Habit {
     // DB stores target_days as an array of day-of-week indices; app type uses the count.
     target_days: row.target_days.length,
     streak: 0,
-    completed_today: false,
+    completed_today,
     weekly_data: [0, 0, 0, 0, 0, 0, 0],
     created_at: row.created_at,
   }

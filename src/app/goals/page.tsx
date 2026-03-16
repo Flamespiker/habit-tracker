@@ -20,7 +20,7 @@ export default async function GoalsPage() {
   return (
     <GoalsClient
       initialGoals={goalRows.map(toGoal)}
-      habits={habitRows.map(toHabit)}
+      habits={habitRows.map((row) => toHabit(row))}
     />
   )
 }
