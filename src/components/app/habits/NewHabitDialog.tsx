@@ -1,6 +1,4 @@
-// TODO: Form dialog to create a new habit with name, category, and frequency fields.
-
-// 'use client' required: manages form state (useState), submit handler, and dialog open/close.
+// 'use client' required: manages form state (useState), async submit handler, and dialog open/close.
 "use client"
 
 import { useState } from "react"
@@ -18,19 +16,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { Category, categoryLabels } from "@/lib/types"
+import { Category, categoryLabels, Habit } from "@/lib/types"
 
 // NOTE: shadcn Select is not installed — using native <select> styled to match Input.
 
-export interface NewHabitFormData {
-  name: string
-  category: Category
-  frequency: "daily" | "weekly" | "custom"
-}
-
 interface NewHabitDialogProps {
-  /** Called with the submitted form values once the POST /api/habits route is wired up. */
-  onAdd?: (data: NewHabitFormData) => void
+  /** Called with the newly created habit after a successful save. */
+  onAdd?: (habit: Habit) => void
 }
 
 const selectClassName = cn(
@@ -43,18 +35,21 @@ const selectClassName = cn(
 
 /**
  * A 'New Habit' trigger button that opens a dialog form for creating a habit.
- * Logs submitted data to the console until POST /api/habits is wired up.
+ * Persists the new habit via POST /api/habits on submit.
  */
 export function NewHabitDialog({ onAdd }: NewHabitDialogProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [category, setCategory] = useState<Category>("health")
-  const [frequency, setFrequency] = useState<NewHabitFormData["frequency"]>("daily")
+  const [frequency, setFrequency] = useState<"daily" | "weekly" | "custom">("daily")
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const resetForm = () => {
     setName("")
     setCategory("health")
     setFrequency("daily")
+    setError(null)
   }
 
   const handleOpenChange = (next: boolean) => {
@@ -62,14 +57,32 @@ export function NewHabitDialog({ onAdd }: NewHabitDialogProps) {
     setOpen(next)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
-    const data: NewHabitFormData = { name: name.trim(), category, frequency }
-    console.log("New habit:", data)
-    onAdd?.(data)
-    resetForm()
-    setOpen(false)
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/habits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), category, frequency }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setError(json.error ?? 'Failed to create habit.')
+        return
+      }
+      onAdd?.(json.habit as Habit)
+      resetForm()
+      setOpen(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create habit.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -123,7 +136,7 @@ export function NewHabitDialog({ onAdd }: NewHabitDialogProps) {
               id="habit-frequency"
               value={frequency}
               onChange={(e) =>
-                setFrequency(e.target.value as NewHabitFormData["frequency"])
+                setFrequency(e.target.value as "daily" | "weekly" | "custom")
               }
               className={selectClassName}
             >
@@ -132,14 +145,18 @@ export function NewHabitDialog({ onAdd }: NewHabitDialogProps) {
               <option value="custom">Custom</option>
             </select>
           </div>
+
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
         </form>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit" form="new-habit-form">
-            Add Habit
+          <Button type="submit" form="new-habit-form" disabled={submitting}>
+            {submitting ? "Adding…" : "Add Habit"}
           </Button>
         </DialogFooter>
       </DialogContent>
