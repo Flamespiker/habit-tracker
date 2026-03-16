@@ -1,6 +1,4 @@
-// TODO: Wire up onAdd to POST /api/goals once Stage 3 Supabase routes are built.
-
-// 'use client' required: manages form state (useState), checkbox multi-select, and dialog open/close.
+// 'use client' required: manages form state (useState), async submit handler, checkbox multi-select, and dialog open/close.
 "use client"
 
 import { useState } from "react"
@@ -18,23 +16,16 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { GoalStatus, Habit } from "@/lib/types"
+import { Goal, GoalStatus, Habit } from "@/lib/types"
 
 // NOTE: shadcn Select is not installed — using native <select> styled to match Input.
 // NOTE: "paused" is not a valid GoalStatus — using active | completed | abandoned per the type.
 
-export interface NewGoalFormData {
-  title: string
-  target_date: string | null
-  status: GoalStatus
-  habit_ids: string[]
-}
-
 interface NewGoalDialogProps {
   /** Habit list passed from the Server Component page for the linked-habits multi-select. */
   habits: Habit[]
-  /** Called with submitted form values once POST /api/goals is wired up. */
-  onAdd?: (data: NewGoalFormData) => void
+  /** Called with the newly created goal after a successful save. */
+  onAdd?: (goal: Goal) => void
 }
 
 const selectClassName = cn(
@@ -48,7 +39,7 @@ const selectClassName = cn(
 /**
  * A 'New Goal' trigger button that opens a dialog form for creating a goal.
  * Supports linking one or more existing habits via checkboxes.
- * Logs submitted data to the console until POST /api/goals is wired up.
+ * Persists the new goal via POST /api/goals on submit.
  */
 export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
   const [open, setOpen] = useState(false)
@@ -56,12 +47,15 @@ export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
   const [targetDate, setTargetDate] = useState("")
   const [status, setStatus] = useState<GoalStatus>("active")
   const [habitIds, setHabitIds] = useState<string[]>([])
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const resetForm = () => {
     setTitle("")
     setTargetDate("")
     setStatus("active")
     setHabitIds([])
+    setError(null)
   }
 
   const handleOpenChange = (next: boolean) => {
@@ -75,19 +69,37 @@ export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
     )
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
-    const data: NewGoalFormData = {
-      title: title.trim(),
-      target_date: targetDate || null,
-      status,
-      habit_ids: habitIds,
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          target_date: targetDate || null,
+          status,
+          habit_ids: habitIds,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setError(json.error ?? 'Failed to create goal.')
+        return
+      }
+      onAdd?.(json.goal as Goal)
+      resetForm()
+      setOpen(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create goal.')
+    } finally {
+      setSubmitting(false)
     }
-    console.log("New goal:", data)
-    onAdd?.(data)
-    resetForm()
-    setOpen(false)
   }
 
   return (
@@ -168,14 +180,18 @@ export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
               ))}
             </div>
           </div>
+
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
         </form>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit" form="new-goal-form">
-            Add Goal
+          <Button type="submit" form="new-goal-form" disabled={submitting}>
+            {submitting ? "Adding…" : "Add Goal"}
           </Button>
         </DialogFooter>
       </DialogContent>
