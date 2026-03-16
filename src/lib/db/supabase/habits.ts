@@ -1,15 +1,15 @@
 import { createClient } from './server'
-import type { Habit } from '@/lib/types'
+import type { Tables, TablesInsert, TablesUpdate } from '@/lib/types/database.types'
 
-/** DB-level habit row — excludes UI-only fields not stored in the `habits` table. */
-export type HabitRow = Omit<Habit, 'completed_today' | 'weekly_data'>
+/** DB-level habit row — matches the `habits` table exactly. */
+export type HabitRow = Tables<'habits'>
 
-type CreateHabitInput = Omit<HabitRow, 'id' | 'created_at'>
-type UpdateHabitInput = Partial<Omit<HabitRow, 'id' | 'user_id' | 'created_at'>>
+type CreateHabitInput = TablesInsert<'habits'>
+type UpdateHabitInput = Omit<TablesUpdate<'habits'>, 'id' | 'user_id' | 'created_at'>
 
 /**
  * Fetches all habits for a given user, ordered by creation date.
- * Returns DB rows — callers must merge `completed_today` and `weekly_data` from checkins.
+ * Returns DB rows — callers must derive `completed_today` and `weekly_data` from checkins.
  */
 export async function getHabits(userId: string): Promise<HabitRow[]> {
   const supabase = await createClient()

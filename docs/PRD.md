@@ -160,8 +160,7 @@
 | `name` | `text` | Display name of the habit |
 | `frequency` | `text` | `daily`, `weekly`, or `custom` |
 | `category` | `text` | Habit category (`fitness`, `health`, `mindfulness`, `productivity`, `learning`) |
-| `target_days` | `int` | Target number of days to complete per frequency period |
-| `streak` | `int` | Cached consecutive completion streak (derived from `checkins`) |
+| `target_days` | `int[]` | Target days of the week to complete this habit |
 | `archived` | `bool` | Whether the habit is archived (hidden from active list) |
 | `created_at` | `timestamptz` | When the habit was created |
 
@@ -318,6 +317,7 @@ Each stage ends with something fully usable — not just wired up, but shippable
 
 - Goal → habit linking: using `habit_ids: string[]` (UI-only array) in Phase 2 mock data. Phase 3 will implement via join table in Supabase.
 - GoalStatus values: `active | completed | abandoned` (not `paused` — removed from type definition).
+- Streak storage: streak is **not stored** in the `habits` table. It is computed at read time from the `checkins` table. The open question is the calculation rule — consecutive days using UTC midnight, or the user's local midnight?
 
 ## What "done" looks like for v1
 I can open the app on my phone, log all my habits for the day, 

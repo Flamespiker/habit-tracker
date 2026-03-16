@@ -19,7 +19,12 @@ export const categoryLabels: Record<Category, string> = {
   learning: "Learning",
 }
 
-/** Goal status values matching the `goals.status` column. */
+/**
+ * UI-layer union for goal status.
+ * The `goals.status` column in Supabase is typed as `string` in the generated database types,
+ * so callers must cast when moving between the DB layer and this type:
+ * `row.status as GoalStatus`
+ */
 export type GoalStatus = "active" | "completed" | "abandoned"
 
 /** A user goal. Mirrors the `goals` table in Supabase. */

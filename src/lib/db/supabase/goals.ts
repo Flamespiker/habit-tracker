@@ -1,11 +1,11 @@
 import { createClient } from './server'
-import type { Goal } from '@/lib/types'
+import type { Tables, TablesInsert, TablesUpdate } from '@/lib/types/database.types'
 
-/** DB-level goal row — excludes UI-only `habit_ids` not stored in the `goals` table. */
-export type GoalRow = Omit<Goal, 'habit_ids'>
+/** DB-level goal row — matches the `goals` table exactly. */
+export type GoalRow = Tables<'goals'>
 
-type CreateGoalInput = Omit<GoalRow, 'id' | 'created_at'>
-type UpdateGoalInput = Partial<Omit<GoalRow, 'id' | 'user_id' | 'created_at'>>
+type CreateGoalInput = TablesInsert<'goals'>
+type UpdateGoalInput = Omit<TablesUpdate<'goals'>, 'id' | 'user_id' | 'created_at'>
 
 /**
  * Fetches all goals for a given user, ordered by creation date.

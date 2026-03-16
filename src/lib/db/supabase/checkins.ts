@@ -1,19 +1,11 @@
 import { createClient } from './server'
+import type { Tables, TablesInsert, TablesUpdate } from '@/lib/types/database.types'
 
-/** A single habit check-in record. Mirrors the `checkins` table in Supabase. */
-export interface Checkin {
-  id: string
-  habit_id: string
-  user_id: string
-  /** ISO date string: YYYY-MM-DD */
-  date: string
-  completed: boolean
-  notes: string | null
-  created_at: string
-}
+/** A single habit check-in record — matches the `checkins` table exactly. */
+export type Checkin = Tables<'checkins'>
 
-type CreateCheckinInput = Omit<Checkin, 'id' | 'created_at'>
-type UpdateCheckinInput = Partial<Pick<Checkin, 'completed' | 'notes'>>
+type CreateCheckinInput = TablesInsert<'checkins'>
+type UpdateCheckinInput = Pick<TablesUpdate<'checkins'>, 'completed' | 'notes'>
 
 /**
  * Fetches check-ins for a habit within an inclusive date range.
