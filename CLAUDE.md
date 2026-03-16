@@ -49,7 +49,7 @@ src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form; POS
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus) + database.types.ts (Supabase-generated; Tables<T>, TablesInsert<T>, TablesUpdate<T>)
 src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
-src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS, temp until Week 6), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getCheckins, createCheckin, upsertCheckin, updateCheckin)
+src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS, temp until Week 6), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getTodayCheckins, getCheckins, createCheckin, upsertCheckin, updateCheckin)
 src/lib/db/mongo/ → MongoDB query functions
 src/lib/auth/ → auth helpers
 middleware.ts → Supabase auth route protection
@@ -65,7 +65,7 @@ tests/ → Playwright tests
 - Components using `useTheme()` must be 'use client' and guard with a `mounted` state before rendering theme-dependent UI
 
 ## Habit Type Notes
-- `completed_today`, `weekly_data`, and `streak` on `Habit` are UI-only — not stored in the `habits` table; all three are computed from `checkins` (stubbed to 0/false until Week 6)
+- `completed_today`, `weekly_data`, and `streak` on `Habit` are UI-only — not stored in the `habits` table; computed from `checkins`. `completed_today` is now real (derived via `getTodayCheckins` + `toHabit(row, todayCheckins)`). `streak` and `weekly_data` still stubbed — TODO Week 6.
 - `Habit.target_days` is a `number` (count); the DB column `target_days` is `number[]` (day-of-week indices) — use `toHabit()` to map between them
 - Habit components take `habit: Habit` (full object) + `onToggle: (id: string) => void` — never individual fields
 - `toggleHabit` pattern: optimistic state update first (UI responds immediately), then fire `POST /api/checkins`. Errors logged but don't revert — page refresh re-syncs from DB. Date is always UTC: `new Date().toISOString().split('T')[0]`
