@@ -22,8 +22,12 @@ src/app/page.tsx → dashboard (route: /) — async Server Component; fetches ha
 src/app/loading.tsx → dashboard loading skeleton (stats cards, habit card grid, chart column)
 src/app/habits/ → habits list — async Server Component fetching real data; delegates toggle state to HabitsClient + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
 src/app/habits/loading.tsx → habits page loading skeleton (header, grid of HabitCardSkeletons)
+src/app/habits/new/page.tsx → stub (TODO: habit creation form; POST /api/habits, redirect to /habits/[id])
+src/app/habits/[id]/edit/page.tsx → stub (TODO: pre-populated edit form; PATCH /api/habits/[id]; DELETE /api/habits/[id] with redirect to /habits)
 src/app/goals/ → goals list — async Server Component fetching real data; delegates list state to GoalsClient + /[id]/page.tsx implemented (title, status badge, target date, description, linked habits with category badge + streak)
 src/app/goals/loading.tsx → goals page loading skeleton (header, list of GoalCardSkeletons)
+src/app/goals/new/page.tsx → stub (TODO: goal creation form; POST /api/goals, redirect to /goals/[id])
+src/app/goals/[id]/edit/page.tsx → stub (TODO: pre-populated edit form; PATCH /api/goals/[id]; mark completed/abandoned; delete)
 src/app/log/ → daily log implemented (habit check-in toggles with strikethrough, notes textarea, disabled submit until Stage 3)
 src/app/settings/ → settings implemented (Profile: display name; Coaching Style: 3 selectable options; Notifications: time input — all saves disabled until Stage 3/4)
 src/app/(auth)/ → login, signup
