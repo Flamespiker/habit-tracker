@@ -3,7 +3,7 @@
 Personal hobby app. Not commercial. Only user is me.
 
 ## Stack
-- Next.js 16 (App Router, TypeScript)
+- Next.js 15 (App Router, TypeScript)
 - React 19
 - Tailwind CSS + shadcn/ui
 - next-themes — light/dark/system theming

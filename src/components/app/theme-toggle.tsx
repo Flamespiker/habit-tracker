@@ -24,7 +24,8 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => { setMounted(true) }, [])
+  // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+  useEffect(() => setMounted(true), [])
 
   if (!mounted) return null
 
