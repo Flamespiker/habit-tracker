@@ -95,6 +95,30 @@ export async function upsertCheckin(checkin: UpsertCheckinInput, client?: Client
 }
 
 /**
+ * Fetches all check-ins for a user within an inclusive date range.
+ * Use this to derive streak and weekly_data for all habits in a single query.
+ * Dates must be ISO date strings (YYYY-MM-DD).
+ */
+export async function getCheckinsForPeriod(
+  userId: string,
+  startDate: string,
+  endDate: string,
+  client?: Client
+): Promise<Checkin[]> {
+  const supabase = client ?? await createClient()
+  const { data, error } = await supabase
+    .from('checkins')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+/**
  * Updates `completed` or `notes` on an existing check-in and returns the updated row.
  */
 export async function updateCheckin(id: string, updates: UpdateCheckinInput, client?: Client): Promise<Checkin> {
