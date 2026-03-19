@@ -19,20 +19,20 @@ export async function GET() {
         const client = createAdminClient()
         const { error } = await client.from('habits').select('id').limit(1)
         if (error) {
-          supabase = { status: 'error', error: error.message }
+          supabase = { status: 'error' as const, error: error.message }
         } else {
-          supabase = { status: 'ok' }
+          supabase = { status: 'ok' as const }
         }
       } catch (err) {
-        supabase = { status: 'error', error: err instanceof Error ? err.message : String(err) }
+        supabase = { status: 'error' as const, error: err instanceof Error ? err.message : String(err) }
       }
     })(),
     (async () => {
       try {
         await connectToMongoDB()
-        mongodb = { status: 'ok' }
+        mongodb = { status: 'ok' as const }
       } catch (err) {
-        mongodb = { status: 'error', error: err instanceof Error ? err.message : String(err) }
+        mongodb = { status: 'error' as const, error: err instanceof Error ? err.message : String(err) }
       }
     })(),
   ])
