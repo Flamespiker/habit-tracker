@@ -23,7 +23,9 @@ interface HabitCardProps {
  */
 export function HabitCard({ habit, onToggle }: HabitCardProps) {
   const completedDays = habit.weekly_data.filter((v) => v > 0).length
-  const progressPct = Math.min(Math.round((completedDays / habit.target_days) * 100), 100)
+  // Fall back to 7 when target_days is 0 or unset to avoid dividing by zero
+  const target = habit.target_days || 7
+  const progressPct = Math.min(Math.round((completedDays / target) * 100), 100)
   const colors = categoryColors[habit.category]
 
   return (
@@ -63,7 +65,7 @@ export function HabitCard({ habit, onToggle }: HabitCardProps) {
         <div className="mt-4">
           <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
             <span>This week</span>
-            <span>{completedDays}/{habit.target_days} days</span>
+            <span>{completedDays}/{target} days</span>
           </div>
           <Progress value={progressPct} />
         </div>

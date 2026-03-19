@@ -34,14 +34,41 @@ export function HabitDashboard({ initialHabits }: HabitDashboardProps) {
     return { totalHabits, completedToday, completionRate, totalStreak }
   }, [habits])
 
+  // todayIndex: 0=Mon … 6=Sun — which column in the chart is today
+  const todayIndex = useMemo(() => {
+    const utcDay = new Date().getUTCDay() // 0=Sun, 1=Mon … 6=Sat
+    return utcDay === 0 ? 6 : utcDay - 1
+  }, [])
+
   const weeklyData = useMemo(() => {
-    const data = [0, 0, 0, 0, 0, 0, 0]
+    const now = new Date()
+    const utcDay = now.getUTCDay()
+    const daysFromMonday = utcDay === 0 ? 6 : utcDay - 1
+
+    // Mon–Sun date strings for the current UTC week
+    const weekDates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now)
+      d.setUTCDate(now.getUTCDate() - daysFromMonday + i)
+      return d.toISOString().split('T')[0]
+    })
+
+    // Count completions per date; future dates stay 0
+    const countsByDate: Record<string, number> = Object.fromEntries(
+      weekDates.map((d) => [d, 0])
+    )
+
     habits.forEach((habit) => {
       habit.weekly_data.forEach((val, idx) => {
-        if (val > 0) data[idx]++
+        if (val <= 0) return
+        // weekly_data[idx] = 1 if completed (6 - idx) days ago
+        const d = new Date(now)
+        d.setUTCDate(now.getUTCDate() - (6 - idx))
+        const dateStr = d.toISOString().split('T')[0]
+        if (dateStr in countsByDate) countsByDate[dateStr]++
       })
     })
-    return data
+
+    return weekDates.map((d) => countsByDate[d])
   }, [habits])
 
   const toggleHabit = async (id: string) => {
@@ -122,7 +149,7 @@ export function HabitDashboard({ initialHabits }: HabitDashboardProps) {
           </div>
 
           <div className="space-y-6">
-            <WeeklyChart data={weeklyData} />
+            <WeeklyChart data={weeklyData} todayIndex={todayIndex} />
 
             <div className="rounded-lg border border-border bg-card p-4">
               <h3 className="mb-3 text-sm font-medium text-foreground">Quick Tips</h3>

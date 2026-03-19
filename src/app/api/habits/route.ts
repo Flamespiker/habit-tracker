@@ -37,7 +37,8 @@ export async function POST(request: Request) {
       target_days: [],
     }, supabase)
 
-    return NextResponse.json({ habit: toHabit(row) }, { status: 201 })
+    // New habit has no checkins yet — pass [] so streak=0, weekly_data=[0×7]
+    return NextResponse.json({ habit: toHabit(row, []) }, { status: 201 })
   } catch (err) {
     console.error('[POST /api/habits]', err)
     const message = err instanceof Error ? err.message : 'Failed to create habit'

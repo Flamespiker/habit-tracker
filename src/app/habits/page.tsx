@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation'
 import { HabitsClient } from '@/components/app/habits/HabitsClient'
 import { getHabits, toHabit } from '@/lib/db/supabase/habits'
-import { getTodayCheckins } from '@/lib/db/supabase/checkins'
+import { getCheckinsForPeriod } from '@/lib/db/supabase/checkins'
 import { createClient } from '@/lib/db/supabase/server'
 
 /**
- * Habits list page. Fetches habits and today's checkins server-side, passes them to HabitsClient.
+ * Habits list page. Fetches habits and the last year of checkins server-side,
+ * passes fully-derived Habit objects (streak, weekly_data, completed_today) to HabitsClient.
  */
 export default async function HabitsPage() {
   const supabase = await createClient()
@@ -14,13 +15,14 @@ export default async function HabitsPage() {
   if (!user) redirect('/login')
 
   const today = new Date().toISOString().split('T')[0]
+  const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const [habitRows, todayCheckins] = await Promise.all([
+  const [habitRows, checkins] = await Promise.all([
     getHabits(user.id, supabase),
-    getTodayCheckins(user.id, today, supabase),
+    getCheckinsForPeriod(user.id, oneYearAgo, today, supabase),
   ])
 
-  const habits = habitRows.map((row) => toHabit(row, todayCheckins))
+  const habits = habitRows.map((row) => toHabit(row, checkins))
 
   return <HabitsClient initialHabits={habits} />
 }

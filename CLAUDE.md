@@ -41,10 +41,10 @@ src/components/app/ → app components (see below)
 src/components/app/Navigation.tsx → sticky site-wide nav bar; accepts `userEmail: string | null` prop from layout; shows truncated email + sign-out button (desktop: after ThemeToggle; mobile: bottom of dropdown); sign-out calls the `signOut` server action via `<form action={signOut}>`
 src/components/app/theme-provider.tsx → next-themes provider (used in root layout)
 src/components/app/theme-toggle.tsx → light/dark/system dropdown toggle
-src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, weekly chart); accepts initialHabits: Habit[] prop from page.tsx
+src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, weekly chart); accepts initialHabits: Habit[] prop from page.tsx; computes weeklyData (Mon–Sun of current UTC week mapped from habits' rolling weekly_data) and todayIndex (0=Mon…6=Sun) passed to WeeklyChart
 src/components/app/stats-card.tsx → single metric card (icon + value + subtitle)
 src/components/app/category-filter.tsx → pill buttons to filter habits by category
-src/components/app/weekly-chart.tsx → bar chart of completions over the last 7 days
+src/components/app/weekly-chart.tsx → bar chart of Mon–Sun completions for the current week; accepts `data: number[]` (Mon–Sun counts) and `todayIndex: number`; today's bar is full primary, others are primary/40; today's label shows "Today"
 src/components/app/habits/HabitCard.tsx → card showing name (links to /habits/[id]), category badge, streak, progress bar, check-in toggle
 src/components/app/habits/HabitCardSkeleton.tsx → loading skeleton matching HabitCard shape
 src/components/app/habits/HabitsClient.tsx → Client Component managing toggle state; receives initialHabits from the Server Component page
@@ -55,7 +55,7 @@ src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form; POS
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus) + database.types.ts (Supabase-generated; Tables<T>, TablesInsert<T>, TablesUpdate<T>)
 src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
-src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS; not used by app routes, kept for DB migrations/scripts), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getTodayCheckins, getCheckins, createCheckin, upsertCheckin, updateCheckin)
+src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS; not used by app routes, kept for DB migrations/scripts), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getTodayCheckins, getCheckins, getCheckinsForPeriod, createCheckin, upsertCheckin, updateCheckin)
 src/lib/db/mongo/ → MongoDB query functions
 src/lib/auth/actions.ts → Server Actions: signIn(prevState, formData), signUp(prevState, formData), signOut(); all use createClient() from server.ts
 src/proxy.ts → Next.js 15 proxy convention (replaces middleware.ts); refreshes Supabase session on every request; redirects unauthenticated users to /login; redirects authenticated users away from /login and /signup
@@ -71,7 +71,10 @@ tests/ → Playwright tests
 - Components using `useTheme()` must be 'use client' and guard with a `mounted` state before rendering theme-dependent UI
 
 ## Habit Type Notes
-- `completed_today`, `weekly_data`, and `streak` on `Habit` are UI-only — not stored in the `habits` table; computed from `checkins`. `completed_today` is real (derived via `getTodayCheckins` + `toHabit(row, todayCheckins)`). `streak` and `weekly_data` are still stubbed — not yet derived from checkins.
+- `completed_today`, `weekly_data`, and `streak` on `Habit` are UI-only — not stored in the `habits` table; all three are derived in `toHabit(row, checkins)` from a flat `CheckinRecord[]` array.
+- `streak` = consecutive completed days counting back from today (UTC); if today is incomplete the count starts from yesterday so the streak isn't prematurely broken.
+- `weekly_data` = 7-element array, index 0 = 6 days ago, index 6 = today; 1 if completed, 0 if not. Dates computed in UTC — TODO: format to local timezone when displayed on the client.
+- Pages fetch the last 365 days of checkins via `getCheckinsForPeriod(userId, oneYearAgo, today)` in a single query and pass the result to every `toHabit()` call. New habits created via POST /api/habits pass `[]`.
 - `Habit.target_days` is a `number` (count); the DB column `target_days` is `number[]` (day-of-week indices) — use `toHabit()` to map between them
 - Habit components take `habit: Habit` (full object) + `onToggle: (id: string) => void` — never individual fields
 - `toggleHabit` pattern: optimistic state update first (UI responds immediately), then fire `POST /api/checkins`. Errors logged but don't revert — page refresh re-syncs from DB. Date is always UTC: `new Date().toISOString().split('T')[0]`
