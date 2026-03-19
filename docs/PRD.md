@@ -226,11 +226,10 @@
 | Field | Type | Description |
 |---|---|---|
 | `_id` | `ObjectId` | MongoDB document ID |
-| `user_id` | `string` | Supabase user UUID |
-| `daily_log_id` | `string` | FK to Supabase `daily_logs.id` |
-| `goal_id` | `string \| null` | Goal this insight relates to, if any |
-| `insight` | `string` | The AI-generated coaching text |
-| `prompt_summary` | `string` | Summary of the prompt sent to Claude |
+| `user_id` | `string` | Supabase user UUID (indexed) |
+| `type` | `string` | `daily_nudge`, `weekly_summary`, or `suggestion` |
+| `habit_context` | `Mixed` | Snapshot of habit data sent to the model — shape varies by type |
+| `content` | `Mixed` | The generated coaching output — shape varies by type |
 | `model` | `string` | Claude model used (e.g. `claude-sonnet-4-6`) |
 | `created_at` | `Date` | When the insight was generated |
 
@@ -242,11 +241,10 @@
 |---|---|---|
 | `_id` | `ObjectId` | MongoDB document ID |
 | `user_id` | `string` | Supabase user UUID (unique index) |
-| `theme` | `string` | `light`, `dark`, or `system` |
-| `notifications_enabled` | `bool` | Whether browser notifications are on |
-| `notification_time` | `string` | Time to send daily nudge, e.g. `"08:00"` |
-| `coaching_style` | `string` | `motivational`, `analytical`, or `gentle` |
-| `updated_at` | `Date` | Last time preferences were changed |
+| `coaching_style` | `string` | `motivational`, `analytical`, or `gentle` — default `motivational` |
+| `notification_time` | `string` | Time to send daily nudge, e.g. `"08:00"` — default `"08:00"` |
+| `focus_areas` | `string[]` | Habit categories or topics the user wants to focus on |
+| `custom_settings` | `Mixed` | Catch-all for future preference fields without schema migrations |
 
 ---
 ## API Routes

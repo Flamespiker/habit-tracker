@@ -8,7 +8,7 @@ Personal hobby app. Not commercial. Only user is me.
 - Tailwind CSS + shadcn/ui
 - next-themes — light/dark/system theming
 - Supabase — Postgres + Auth (structured data)
-- MongoDB Atlas M0 — AI responses, coaching insights, user preferences (flexible data)
+- MongoDB Atlas M0 + Mongoose — AI responses, coaching insights, user preferences (flexible data)
 - Vercel (Hobby plan — personal use)
 - Playwright (E2E tests)
 - GitHub Actions + Claude Code Action (CI/CD + PR reviews)
@@ -55,8 +55,12 @@ src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form; POS
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus) + database.types.ts (Supabase-generated; Tables<T>, TablesInsert<T>, TablesUpdate<T>)
 src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
-src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS; not used by app routes, kept for DB migrations/scripts), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getTodayCheckins, getCheckins, getCheckinsForPeriod, createCheckin, upsertCheckin, updateCheckin)
-src/lib/db/mongo/ → MongoDB query functions
+src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS; not used by app routes, kept for DB migrations/scripts), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getTodayCheckins, getCheckins, createCheckin, upsertCheckin, updateCheckin)
+src/lib/db/mongo/client.ts → cached Mongoose connection via `connectToMongoDB()`; caches on `global._mongooseCache` so the connection survives Next.js hot reloads and is reused across serverless invocations; reads MONGODB_URI env var
+src/lib/db/mongo/models/AiCoaching.ts → Mongoose model for `ai_coaching` collection; fields: user_id, type (daily_nudge|weekly_summary|suggestion), habit_context (Mixed), content (Mixed), created_at, model
+src/lib/db/mongo/models/UserPreferences.ts → Mongoose model for `user_preferences` collection; fields: user_id (unique), coaching_style (motivational|analytical|gentle), notification_time, focus_areas (string[]), custom_settings (Mixed)
+src/lib/db/mongo/ai-coaching.ts → getCoachingHistory(userId, limit?), saveCoachingResponse(data)
+src/lib/db/mongo/user-preferences.ts → getUserPreferences(userId), saveUserPreferences(userId, prefs) — upserts on user_id
 src/lib/auth/actions.ts → Server Actions: signIn(prevState, formData), signUp(prevState, formData), signOut(); all use createClient() from server.ts
 src/proxy.ts → Next.js 15 proxy convention (replaces middleware.ts); refreshes Supabase session on every request; redirects unauthenticated users to /login; redirects authenticated users away from /login and /signup
 tests/ → Playwright tests
