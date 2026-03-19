@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from '@/components/app/theme-provider'
 import { Navigation } from '@/components/app/Navigation'
+import { createClient } from '@/lib/db/supabase/server'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,11 +20,14 @@ export const metadata: Metadata = {
   description: "My Personal habit and goal tracking app",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -34,7 +38,7 @@ export default function RootLayout({
           defaultTheme="dark"
           enableSystem
         >
-          <Navigation />
+          <Navigation userEmail={user?.email ?? null} />
           {children}
         </ThemeProvider>
       </body>

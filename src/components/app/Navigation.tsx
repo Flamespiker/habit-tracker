@@ -4,10 +4,11 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, ListChecks, Menu, NotebookPen, Settings, Target, X } from "lucide-react"
+import { LayoutDashboard, ListChecks, LogOut, Menu, NotebookPen, Settings, Target, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/app/theme-toggle"
+import { signOut } from "@/lib/auth/actions"
 
 interface NavLink {
   href: string
@@ -23,11 +24,15 @@ const navLinks: NavLink[] = [
   { href: "/settings", label: "Settings",  icon: Settings },
 ]
 
+interface NavigationProps {
+  userEmail: string | null
+}
+
 /**
- * Site-wide navigation bar with active route highlighting and a collapsible mobile menu.
- * Renders links to /dashboard, /habits, /goals, and /settings on every page.
+ * Site-wide navigation bar with active route highlighting, a collapsible mobile menu,
+ * a truncated user email indicator, and a sign-out button.
  */
-export function Navigation() {
+export function Navigation({ userEmail }: NavigationProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -69,9 +74,29 @@ export function Navigation() {
               </Link>
             </Button>
           ))}
+
           <div className="ml-2">
             <ThemeToggle />
           </div>
+
+          {userEmail && (
+            <div className="ml-1 flex items-center gap-2 border-l border-border pl-3">
+              <span className="max-w-[10rem] truncate text-xs text-muted-foreground">
+                {userEmail}
+              </span>
+              <form action={signOut}>
+                <Button
+                  type="submit"
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </Button>
+              </form>
+            </div>
+          )}
         </div>
 
         {/* Mobile: ThemeToggle + hamburger button */}
@@ -107,6 +132,23 @@ export function Navigation() {
               {label}
             </Link>
           ))}
+
+          {userEmail && (
+            <div className="mt-1 border-t border-border pt-2">
+              <span className="block truncate px-3 py-1 text-xs text-muted-foreground">
+                {userEmail}
+              </span>
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       )}
     </nav>
