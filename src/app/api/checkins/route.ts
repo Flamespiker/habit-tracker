@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { upsertCheckin } from '@/lib/db/supabase/checkins'
-import { createAdminClient } from '@/lib/db/supabase/admin'
+import { createClient } from '@/lib/db/supabase/server'
 
 /**
  * POST /api/checkins
@@ -9,6 +9,13 @@ import { createAdminClient } from '@/lib/db/supabase/admin'
  */
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { habit_id, date, completed } = body
 
@@ -22,14 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'completed must be a boolean' }, { status: 400 })
     }
 
-    // TODO (Week 6): replace with authenticated user ID from session
-    const userId = process.env.NEXT_PUBLIC_TEST_USER_ID!
-
-    // TODO (Week 6): replace admin client with the authenticated server client once
-    // RLS policies are in place — the admin client bypasses all row-level security.
-    const supabase = createAdminClient()
-
-    const checkin = await upsertCheckin({ habit_id, date, completed, user_id: userId }, supabase)
+    const checkin = await upsertCheckin({ habit_id, date, completed, user_id: user.id }, supabase)
 
     return NextResponse.json({ checkin }, { status: 201 })
   } catch (err) {
