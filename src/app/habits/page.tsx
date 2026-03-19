@@ -14,8 +14,9 @@ export default async function HabitsPage() {
 
   if (!user) redirect('/login')
 
-  const today = new Date().toISOString().split('T')[0]
-  const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const todayDate = new Date()
+  const today = todayDate.toISOString().split('T')[0]
+  const oneYearAgo = new Date(todayDate.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
   const [habitRows, checkins] = await Promise.all([
     getHabits(user.id, supabase),
