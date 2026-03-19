@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createGoal, createGoalHabits, toGoal } from '@/lib/db/supabase/goals'
-import { createAdminClient } from '@/lib/db/supabase/admin'
+import { createClient } from '@/lib/db/supabase/server'
 import type { Goal } from '@/lib/types'
 
 /**
@@ -10,6 +10,13 @@ import type { Goal } from '@/lib/types'
  */
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { title, target_date, status, habit_ids } = body
 
@@ -17,18 +24,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'title is required' }, { status: 400 })
     }
 
-    // TODO (Week 6): replace with authenticated user ID from session
-    const userId = process.env.NEXT_PUBLIC_TEST_USER_ID!
-
-    // TODO (Week 6): replace admin client with the authenticated server client once
-    // RLS policies are in place — the admin client bypasses all row-level security.
-    const supabase = createAdminClient()
-
     const row = await createGoal({
       title: title.trim(),
       target_date: target_date ?? null,
       status: status ?? 'active',
-      user_id: userId,
+      user_id: user.id,
     }, supabase)
 
     const linkedIds: string[] = Array.isArray(habit_ids) ? habit_ids : []

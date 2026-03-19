@@ -30,10 +30,11 @@ src/app/goals/new/page.tsx → stub (TODO: goal creation form; POST /api/goals, 
 src/app/goals/[id]/edit/page.tsx → stub (TODO: pre-populated edit form; PATCH /api/goals/[id]; mark completed/abandoned; delete)
 src/app/log/ → daily log implemented (habit check-in toggles with strikethrough, notes textarea, disabled submit until Stage 3)
 src/app/settings/ → settings implemented (Profile: display name; Coaching Style: 3 selectable options; Notifications: time input — all saves disabled until Stage 3/4)
-src/app/(auth)/ → login, signup
-src/app/api/habits/route.ts → POST /api/habits (create habit, uses admin client, returns mapped Habit)
-src/app/api/goals/route.ts → POST /api/goals (create goal + goal_habits rows, uses admin client, returns mapped Goal)
-src/app/api/checkins/route.ts → POST /api/checkins (upsert checkin by habit_id + date, uses admin client)
+src/app/(auth)/login/page.tsx → login form (email + password); useActionState → signIn server action; links to /signup
+src/app/(auth)/signup/page.tsx → sign-up form (email + password + confirm password); useActionState → signUp server action; links to /login
+src/app/api/habits/route.ts → POST /api/habits (auth-gated: 401 if no session; creates habit for session user; returns mapped Habit)
+src/app/api/goals/route.ts → POST /api/goals (auth-gated: 401 if no session; creates goal + goal_habits rows for session user; returns mapped Goal)
+src/app/api/checkins/route.ts → POST /api/checkins (auth-gated: 401 if no session; upserts checkin by habit_id + date for session user)
 src/components/ui/ → shadcn/ui (don't edit)
 src/components/app/ → app components (see below)
 src/components/app/Navigation.tsx → sticky site-wide nav bar (links to /, /habits, /goals, /log, /settings; active route highlighting; mobile hamburger menu)
@@ -53,10 +54,10 @@ src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form; POS
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus) + database.types.ts (Supabase-generated; Tables<T>, TablesInsert<T>, TablesUpdate<T>)
 src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
-src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS, temp until Week 6), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getTodayCheckins, getCheckins, createCheckin, upsertCheckin, updateCheckin)
+src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS; not used by app routes, kept for DB migrations/scripts), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getTodayCheckins, getCheckins, createCheckin, upsertCheckin, updateCheckin)
 src/lib/db/mongo/ → MongoDB query functions
-src/lib/auth/ → auth helpers
-middleware.ts → Supabase auth route protection
+src/lib/auth/actions.ts → Server Actions: signIn(prevState, formData), signUp(prevState, formData), signOut(); all use createClient() from server.ts
+src/proxy.ts → Next.js 15 proxy convention (replaces middleware.ts); refreshes Supabase session on every request; redirects unauthenticated users to /login; redirects authenticated users away from /login and /signup
 tests/ → Playwright tests
 .github/workflows/ → CI/CD pipelines
 
@@ -69,7 +70,7 @@ tests/ → Playwright tests
 - Components using `useTheme()` must be 'use client' and guard with a `mounted` state before rendering theme-dependent UI
 
 ## Habit Type Notes
-- `completed_today`, `weekly_data`, and `streak` on `Habit` are UI-only — not stored in the `habits` table; computed from `checkins`. `completed_today` is now real (derived via `getTodayCheckins` + `toHabit(row, todayCheckins)`). `streak` and `weekly_data` still stubbed — TODO Week 6.
+- `completed_today`, `weekly_data`, and `streak` on `Habit` are UI-only — not stored in the `habits` table; computed from `checkins`. `completed_today` is real (derived via `getTodayCheckins` + `toHabit(row, todayCheckins)`). `streak` and `weekly_data` are still stubbed — not yet derived from checkins.
 - `Habit.target_days` is a `number` (count); the DB column `target_days` is `number[]` (day-of-week indices) — use `toHabit()` to map between them
 - Habit components take `habit: Habit` (full object) + `onToggle: (id: string) => void` — never individual fields
 - `toggleHabit` pattern: optimistic state update first (UI responds immediately), then fire `POST /api/checkins`. Errors logged but don't revert — page refresh re-syncs from DB. Date is always UTC: `new Date().toISOString().split('T')[0]`
@@ -95,12 +96,14 @@ tests/ → Playwright tests
 
 ## Data Layer Conventions
 - Client Components → fetch API route → lib/db/
-- Server Components → call lib/db/ directly
-- Until Week 6 auth: all lib/db/ callers pass `createAdminClient()` (bypasses RLS). Query functions accept an optional `client` param — pass admin client explicitly, falls back to server client when omitted.
+- Server Components → call lib/db/ directly, using `createClient()` from server.ts
+- API routes: call `createClient()` → `supabase.auth.getUser()` → return 401 if no user → pass `supabase` to query functions
+- Server Component pages: call `createClient()` → `getUser()` → `redirect('/login')` if no user → pass `supabase` to query functions
+- Query functions accept an optional `client` param — always pass the authenticated server client explicitly; falls back to a fresh server client when omitted
 
 ## Server/Client Split Pattern
 List pages with a creation dialog always split into two files:
-1. `src/app/[route]/page.tsx` — async Server Component; fetches data with admin client, renders `<XxxClient initialItems={...} />`
+1. `src/app/[route]/page.tsx` — async Server Component; calls `createClient()` + `getUser()`, fetches data, renders `<XxxClient initialItems={...} />`
 2. `src/components/app/[domain]/XxxClient.tsx` — Client Component; holds `useState`, passes `onAdd={(item) => setItems(prev => [...prev, item])}` to the dialog
 This is required because `async` server fetching and `useState` cannot coexist in one file.
 Current examples: HabitsClient, GoalsClient, HabitDashboard (initialHabits prop).
