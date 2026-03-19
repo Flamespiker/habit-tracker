@@ -10,29 +10,23 @@ type ServiceResult = { status: 'ok' } | { status: 'error'; error: string }
  * Returns 200 if all systems are healthy, 503 if any check fails.
  */
 export async function GET() {
-  let supabase: ServiceResult = { status: 'error', error: 'unknown' }
-  let mongodb: ServiceResult = { status: 'error', error: 'unknown' }
-
-  await Promise.all([
-    (async () => {
+  const [supabase, mongodb] = await Promise.all([
+    (async (): Promise<ServiceResult> => {
       try {
         const client = createAdminClient()
         const { error } = await client.from('habits').select('id').limit(1)
-        if (error) {
-          supabase = { status: 'error' as const, error: error.message }
-        } else {
-          supabase = { status: 'ok' as const }
-        }
+        if (error) return { status: 'error', error: error.message }
+        return { status: 'ok' }
       } catch (err) {
-        supabase = { status: 'error' as const, error: err instanceof Error ? err.message : String(err) }
+        return { status: 'error', error: err instanceof Error ? err.message : String(err) }
       }
     })(),
-    (async () => {
+    (async (): Promise<ServiceResult> => {
       try {
         await connectToMongoDB()
-        mongodb = { status: 'ok' as const }
+        return { status: 'ok' }
       } catch (err) {
-        mongodb = { status: 'error' as const, error: err instanceof Error ? err.message : String(err) }
+        return { status: 'error', error: err instanceof Error ? err.message : String(err) }
       }
     })(),
   ])
