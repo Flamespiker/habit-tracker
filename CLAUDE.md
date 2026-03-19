@@ -18,6 +18,7 @@ badge, button, card, dialog, dropdown-menu, input, label, progress, skeleton, so
 
 ## Folder Structure
 src/app/ → Next.js pages and API routes
+src/app/layout.tsx → root layout — async Server Component; fetches session user via createClient() + getUser(), passes userEmail to Navigation
 src/app/page.tsx → dashboard (route: /) — async Server Component; fetches habits from Supabase via getHabits()
 src/app/loading.tsx → dashboard loading skeleton (stats cards, habit card grid, chart column)
 src/app/habits/ → habits list — async Server Component fetching real data; delegates toggle state to HabitsClient + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
@@ -37,7 +38,7 @@ src/app/api/goals/route.ts → POST /api/goals (auth-gated: 401 if no session; c
 src/app/api/checkins/route.ts → POST /api/checkins (auth-gated: 401 if no session; upserts checkin by habit_id + date for session user)
 src/components/ui/ → shadcn/ui (don't edit)
 src/components/app/ → app components (see below)
-src/components/app/Navigation.tsx → sticky site-wide nav bar (links to /, /habits, /goals, /log, /settings; active route highlighting; mobile hamburger menu)
+src/components/app/Navigation.tsx → sticky site-wide nav bar; accepts `userEmail: string | null` prop from layout; shows truncated email + sign-out button (desktop: after ThemeToggle; mobile: bottom of dropdown); sign-out calls the `signOut` server action via `<form action={signOut}>`
 src/components/app/theme-provider.tsx → next-themes provider (used in root layout)
 src/components/app/theme-toggle.tsx → light/dark/system dropdown toggle
 src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, weekly chart); accepts initialHabits: Habit[] prop from page.tsx
@@ -93,6 +94,7 @@ tests/ → Playwright tests
 - DB queries ONLY in src/lib/db/ — never inline in components
 - Auth logic ONLY in src/lib/auth/
 - Supabase = relational data | MongoDB = AI/flexible data
+- To call a server action from a Client Component, use `<form action={serverAction}>` — do NOT wrap in useCallback or call imperatively unless you need useActionState for error feedback
 
 ## Data Layer Conventions
 - Client Components → fetch API route → lib/db/
