@@ -135,7 +135,7 @@ List pages with a creation dialog always split into two files:
 1. `src/app/[route]/page.tsx` — async Server Component; calls `createClient()` + `getUser()`, fetches data, renders `<XxxClient initialItems={...} />`
 2. `src/components/app/[domain]/XxxClient.tsx` — Client Component; holds `useState`, passes `onAdd={(item) => setItems(prev => [...prev, item])}` to the dialog
 This is required because `async` server fetching and `useState` cannot coexist in one file.
-Current examples: HabitsClient, GoalsClient, HabitDashboard (initialHabits prop).
+Current examples: HabitsClient, GoalsClient, HabitDashboard (initialHabits prop), LogClient (initialHabits prop).
 
 ## Commands
 npm run dev → dev server
