@@ -4,29 +4,39 @@
     "model": "claude-sonnet-4-6",
     "temperature": 0.3,
     "max_tokens": 150,
-    "response": "📚 **12 days of reading — that's real momentum!** Your morning run streak is sitting at 5 days and waiting for you — don't let it sleep in when you don't have to. And hey, even 5 minutes of meditation today turns that zero into a starting line. 🏃‍♂️✨",
+    "response": "📚 Your 12-day reading streak is seriously impressive — that consistency is building something real! Don't let day 6 of your morning run slip away; lace up and protect that streak before the day gets away from you. And hey, even 5 minutes of meditation today gets Meditate back on the board — zero is just a starting line. 🏃‍♂️🧘",
     "input_tokens": 181,
-    "output_tokens": 79,
-    "latency_ms": 5086
+    "output_tokens": 93,
+    "latency_ms": 3825
   },
   {
     "label": "sonnet-4-6 | temp 0.8 | creative",
     "model": "claude-sonnet-4-6",
     "temperature": 0.8,
     "max_tokens": 150,
-    "response": "📚 That 12-day reading streak is seriously impressive — you're building a real identity as a reader! Don't let day 6 of your morning run slip away; lace up and protect that momentum. And hey, even 2 minutes of meditation today starts getting that streak off zero. 💪",
+    "response": "📚 **12 days of reading — that consistency is real!** Your morning run streak is sitting at 5 days and waiting for you — don't let today be the one that breaks it. And hey, even 5 minutes of meditation today gets that streak off zero and builds momentum. You've got this! 💪",
     "input_tokens": 181,
-    "output_tokens": 71,
-    "latency_ms": 2936
+    "output_tokens": 75,
+    "latency_ms": 3703
   },
   {
     "label": "sonnet-4-6 | temp 0.5 | balanced",
     "model": "claude-sonnet-4-6",
     "temperature": 0.5,
     "max_tokens": 300,
-    "response": "📚 **12 days of reading — that's real momentum!** Don't let your morning run streak slip at day 5 — lace up and keep that chain alive. And hey, even 2 minutes of meditation today gets Meditate off zero and back in the game! 💪",
+    "response": "📚 **12 days of reading — that's real momentum!** Don't let your morning run streak slip at day 5 — lace up and keep that chain alive. And hey, even 2 minutes of meditation today gets you back on the board! 🏃‍♂️✨",
     "input_tokens": 181,
-    "output_tokens": 69,
-    "latency_ms": 4159
+    "output_tokens": 72,
+    "latency_ms": 3364
+  },
+  {
+    "label": "haiku-3-5 | temp 0.5 | fast/cheap",
+    "model": "claude-haiku-4-5-20251001",
+    "temperature": 0.5,
+    "max_tokens": 150,
+    "response": "Your reading streak is on 🔥—12 days straight is fantastic! Your morning run is at 5 days, so close to a full week—don't break it today. You've got the momentum; let's keep it rolling! 🏃‍♂️📚",
+    "input_tokens": 180,
+    "output_tokens": 66,
+    "latency_ms": 1529
   }
 ]

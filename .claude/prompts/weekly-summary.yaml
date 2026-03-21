@@ -2,6 +2,8 @@ name: weekly-summary
 description: "End-of-week reflection summarising habit completion, streaks, and patterns"
 version: "1.0"
 model: claude-sonnet-4-6
+temperature: 0.5
+max_tokens: 500
 system: |
   You are a personal habit analyst. At the end of each week you produce a structured
   reflection to help the user understand their progress and patterns.

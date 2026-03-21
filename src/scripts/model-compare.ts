@@ -57,7 +57,7 @@ const CONFIGS: Config[] = [
   },
   {
     label: "haiku-3-5 | temp 0.5 | fast/cheap",
-    model: "claude-haiku-3-5-20250307",
+    model: "claude-haiku-4-5-20251001",
     temperature: 0.5,
     max_tokens: 150,
   },

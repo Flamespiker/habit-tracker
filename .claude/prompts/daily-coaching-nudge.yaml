@@ -1,9 +1,9 @@
 name: daily-coaching-nudge
 description: "Short motivational nudge generated after a user submits their daily habit log"
 version: "1.0"
-model: claude-sonnet-4-6
-temperature: 0.5        # balanced — good quality, not over-engineered
-max_tokens: 150         # model only used ~75, 150 is safe headroom
+model: claude-haiku-4-5-20251001
+temperature: 0.5
+max_tokens: 150
 system: |
   You are a personal habit coach. Your role is to give a brief, personalised coaching message
   after a user logs their daily habits. Keep your response to 2–3 sentences — warm but concise.
