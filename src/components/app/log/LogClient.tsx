@@ -1,9 +1,9 @@
 // 'use client' required: manages habit toggle state, journal notes, and streaming nudge fetch.
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { flushSync } from "react-dom"
-import { Check, Loader2, Sparkles } from "lucide-react"
+import { Check, Loader2, Sparkles, BarChart2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,13 +30,33 @@ function formatToday(): string {
   })
 }
 
+/** Type guard for the structured WeeklySummaryContent shape. */
+interface WeeklySummaryContent {
+  overview: string
+  highlights: string[]
+  struggles: string[]
+  recommendation: string
+}
+
+function isWeeklySummaryContent(v: unknown): v is WeeklySummaryContent {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    "overview" in v &&
+    "highlights" in v &&
+    "struggles" in v &&
+    "recommendation" in v
+  )
+}
+
 interface Props {
   initialHabits: Habit[]
 }
 
 /**
  * Daily log client. Receives real habits from the Server Component wrapper.
- * Manages check-in toggle state, journal notes, and the streaming coaching nudge.
+ * Manages check-in toggle state, journal notes, streaming coaching nudge,
+ * and weekly summary generation.
  */
 export default function LogClient({ initialHabits }: Props) {
   const [habits, setHabits] = useState<Habit[]>(initialHabits)
@@ -45,8 +65,10 @@ export default function LogClient({ initialHabits }: Props) {
   const [freshNudge, setFreshNudge] = useState<string | null>(null)
   const [isLogging, setIsLogging] = useState(false)
   const [logError, setLogError] = useState<string | null>(null)
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const refreshCoachingHistory = useCallback(() => {
     fetch("/api/coaching?limit=1")
       .then((res) => (res.ok ? res.json() : null))
       .then((data: IAiCoaching[] | null) => {
@@ -54,6 +76,10 @@ export default function LogClient({ initialHabits }: Props) {
       })
       .catch(() => undefined)
   }, [])
+
+  useEffect(() => {
+    refreshCoachingHistory()
+  }, [refreshCoachingHistory])
 
   const completedCount = habits.filter((h) => h.completed_today).length
 
@@ -99,6 +125,27 @@ export default function LogClient({ initialHabits }: Props) {
     }
   }
 
+  const generateWeeklySummary = async () => {
+    setIsGeneratingSummary(true)
+    setSummaryError(null)
+    try {
+      const res = await fetch("/api/weekly-summary", { method: "POST" })
+      if (!res.ok) {
+        const data = await res.json() as { error?: string }
+        throw new Error(data.error ?? "Failed to generate weekly summary")
+      }
+      // Clear the streaming nudge and pull the new summary into the coaching card
+      setFreshNudge(null)
+      refreshCoachingHistory()
+    } catch (err) {
+      setSummaryError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setIsGeneratingSummary(false)
+    }
+  }
+
+  const isAnyLoading = isLogging || isGeneratingSummary
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-8">
@@ -106,29 +153,37 @@ export default function LogClient({ initialHabits }: Props) {
         <p className="mt-1 text-sm text-muted-foreground">{formatToday()}</p>
       </div>
 
-      {/* Coaching nudge — loading, fresh result, or most recent historical nudge */}
-      {(isLogging || freshNudge || latestNudge) && (
+      {/* Coaching card — loading, fresh stream, or latest historical entry */}
+      {(isAnyLoading || freshNudge || latestNudge) && (
         <Card className="mb-6 border-border bg-card">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
-              {isLogging
+              {isAnyLoading
                 ? <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 : <Sparkles className="h-4 w-4 text-primary" />
               }
-              Coach&apos;s Note
+              {latestNudge?.type === "weekly_summary" && !isAnyLoading && !freshNudge
+                ? "Weekly Summary"
+                : "Coach\u2019s Note"}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLogging ? (
+            {isGeneratingSummary ? (
+              <p className="text-sm text-muted-foreground">Generating your weekly summary… this may take a moment.</p>
+            ) : isLogging ? (
               <p className="text-sm text-muted-foreground">Generating your coaching nudge…</p>
             ) : freshNudge ? (
               <p className="text-sm text-muted-foreground">{freshNudge}</p>
             ) : latestNudge ? (
-              <p className="text-sm text-muted-foreground">
-                {typeof latestNudge.content === "string"
-                  ? latestNudge.content
-                  : JSON.stringify(latestNudge.content)}
-              </p>
+              isWeeklySummaryContent(latestNudge.content) ? (
+                <WeeklySummaryView content={latestNudge.content} />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {typeof latestNudge.content === "string"
+                    ? latestNudge.content
+                    : JSON.stringify(latestNudge.content)}
+                </p>
+              )
             ) : null}
           </CardContent>
         </Card>
@@ -201,19 +256,91 @@ export default function LogClient({ initialHabits }: Props) {
         </CardContent>
       </Card>
 
-      <Button className="w-full" onClick={logDay} disabled={isLogging}>
-        {isLogging ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating nudge…
-          </>
-        ) : (
-          "Log Day"
+      <div className="flex flex-col gap-3">
+        <Button className="w-full" onClick={logDay} disabled={isAnyLoading}>
+          {isLogging ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating nudge…
+            </>
+          ) : (
+            "Log Day"
+          )}
+        </Button>
+        {logError && (
+          <p className="text-center text-xs text-destructive">{logError}</p>
         )}
-      </Button>
-      {logError && (
-        <p className="mt-2 text-center text-xs text-destructive">{logError}</p>
-      )}
+
+        <Button
+          className="w-full"
+          variant="outline"
+          onClick={generateWeeklySummary}
+          disabled={isAnyLoading}
+        >
+          {isGeneratingSummary ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating summary…
+            </>
+          ) : (
+            <>
+              <BarChart2 className="mr-2 h-4 w-4" />
+              Generate weekly summary
+            </>
+          )}
+        </Button>
+        {summaryError && (
+          <p className="text-center text-xs text-destructive">{summaryError}</p>
+        )}
+      </div>
     </main>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Weekly summary sub-component
+// ---------------------------------------------------------------------------
+
+/**
+ * Renders a structured WeeklySummaryContent with labelled sections.
+ */
+function WeeklySummaryView({ content }: { content: WeeklySummaryContent }) {
+  return (
+    <div className="space-y-3 text-sm">
+      <p className="text-muted-foreground">{content.overview}</p>
+
+      {content.highlights.length > 0 && (
+        <div>
+          <p className="mb-1 font-medium text-foreground">Highlights</p>
+          <ul className="space-y-1">
+            {content.highlights.map((h, i) => (
+              <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {content.struggles.length > 0 && (
+        <div>
+          <p className="mb-1 font-medium text-foreground">Struggles</p>
+          <ul className="space-y-1">
+            {content.struggles.map((s, i) => (
+              <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground" />
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div>
+        <p className="mb-1 font-medium text-foreground">Focus for next week</p>
+        <p className="text-muted-foreground">{content.recommendation}</p>
+      </div>
+    </div>
   )
 }
