@@ -1,12 +1,14 @@
 import { redirect } from 'next/navigation'
 import { HabitDashboard } from '@/components/app/habit-dashboard'
+import { DashboardCoachingPanel } from '@/components/app/DashboardCoachingPanel'
 import { getHabits, toHabit } from '@/lib/db/supabase/habits'
 import { getCheckinsForPeriod } from '@/lib/db/supabase/checkins'
 import { createClient } from '@/lib/db/supabase/server'
+import { getCoachingHistory } from '@/lib/db/mongo/ai-coaching'
 
 /**
- * Dashboard page. Fetches habits and the last year of checkins server-side,
- * passes fully-derived Habit objects (streak, weekly_data, completed_today) to the client dashboard.
+ * Dashboard page. Fetches habits, checkins (Supabase), and recent coaching history (MongoDB)
+ * in parallel via Promise.all, then passes derived data to client/server components.
  */
 export default async function Home() {
   const supabase = await createClient()
@@ -18,12 +20,20 @@ export default async function Home() {
   const today = todayDate.toISOString().split('T')[0]
   const oneYearAgo = new Date(todayDate.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const [habitRows, checkins] = await Promise.all([
+  const [habitRows, checkins, coachingEntries] = await Promise.all([
     getHabits(user.id, supabase),
     getCheckinsForPeriod(user.id, oneYearAgo, today, supabase),
+    getCoachingHistory(user.id, 3),
   ])
 
   const habits = habitRows.map((row) => toHabit(row, checkins))
 
-  return <HabitDashboard initialHabits={habits} />
+  return (
+    <div className="flex flex-col gap-6">
+      <HabitDashboard initialHabits={habits} />
+      <div className="mx-auto w-full max-w-5xl px-4">
+        <DashboardCoachingPanel entries={coachingEntries} />
+      </div>
+    </div>
+  )
 }

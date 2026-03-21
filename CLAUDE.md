@@ -19,7 +19,7 @@ badge, button, card, dialog, dropdown-menu, input, label, progress, skeleton, so
 ## Folder Structure
 src/app/ → Next.js pages and API routes
 src/app/layout.tsx → root layout — async Server Component; fetches session user via createClient() + getUser(), passes userEmail to Navigation
-src/app/page.tsx → dashboard (route: /) — async Server Component; fetches habits from Supabase via getHabits()
+src/app/page.tsx → dashboard (route: /) — async Server Component; fetches habits + checkins (Supabase) and coaching history (MongoDB) in parallel via Promise.all; passes habits to HabitDashboard and 3 most recent coaching entries to DashboardCoachingPanel
 src/app/loading.tsx → dashboard loading skeleton (stats cards, habit card grid, chart column)
 src/app/habits/ → habits list — async Server Component fetching real data; delegates toggle state to HabitsClient + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
 src/app/habits/loading.tsx → habits page loading skeleton (header, grid of HabitCardSkeletons)
@@ -45,6 +45,7 @@ src/components/app/Navigation.tsx → sticky site-wide nav bar; accepts `userEma
 src/components/app/theme-provider.tsx → next-themes provider (used in root layout)
 src/components/app/theme-toggle.tsx → light/dark/system dropdown toggle
 src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, weekly chart); accepts initialHabits: Habit[] prop from page.tsx; computes weeklyData (Mon–Sun of current UTC week mapped from habits' rolling weekly_data) and todayIndex (0=Mon…6=Sun) passed to WeeklyChart
+src/components/app/DashboardCoachingPanel.tsx → Server Component; accepts entries: IAiCoaching[]; displays up to 3 most recent coaching entries — type label, truncated content preview (100 chars), relative date; shows "Coaching nudge pending" for null or placeholder content; data verification component, not final UI
 src/components/app/stats-card.tsx → single metric card (icon + value + subtitle)
 src/components/app/category-filter.tsx → pill buttons to filter habits by category
 src/components/app/weekly-chart.tsx → bar chart of Mon–Sun completions for the current week; accepts `data: number[]` (Mon–Sun counts) and `todayIndex: number`; today's bar is full primary, others are primary/40; today's label shows "Today"
