@@ -1,10 +1,8 @@
-// TODO: Stage 3 — wire Save Profile to PATCH /api/settings (Supabase).
-// TODO: Stage 4 — wire Coaching Style and Notification Time to PATCH /api/settings (MongoDB).
-
-// 'use client' required: manages coaching style selection, notification time, and display name state.
+// 'use client' required: manages form state and calls fetch on save.
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -32,13 +30,66 @@ const coachingOptions: { value: CoachingStyle; label: string; description: strin
 ]
 
 /**
- * Settings page. Displays Profile, Coaching Style, and Notification Time sections.
- * Client Component — form state is local until API routes are wired up in Stage 3/4.
+ * Settings page. Loads preferences from MongoDB on mount.
+ * Coaching style auto-saves on selection; notifications save on button click.
+ * Display name (Supabase profile) is not yet wired — save button remains disabled.
  */
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("")
   const [coachingStyle, setCoachingStyle] = useState<CoachingStyle>("motivational")
   const [notificationTime, setNotificationTime] = useState("08:00")
+  const [loaded, setLoaded] = useState(false)
+  const [savingCoaching, setSavingCoaching] = useState(false)
+  const [savingNotifications, setSavingNotifications] = useState(false)
+
+  // Load preferences from MongoDB on mount
+  useEffect(() => {
+    fetch("/api/preferences")
+      .then((r) => r.json())
+      .then((data: { coaching_style: CoachingStyle; notification_time: string }) => {
+        setCoachingStyle(data.coaching_style)
+        setNotificationTime(data.notification_time)
+        setLoaded(true)
+      })
+      .catch(() => {
+        toast.error("Failed to load preferences")
+        setLoaded(true)
+      })
+  }, [])
+
+  const patchPreferences = async (update: Partial<{ coaching_style: CoachingStyle; notification_time: string }>) => {
+    const res = await fetch("/api/preferences", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(update),
+    })
+    if (!res.ok) throw new Error("Failed to save preferences")
+  }
+
+  const handleCoachingStyleChange = async (style: CoachingStyle) => {
+    setCoachingStyle(style)
+    setSavingCoaching(true)
+    try {
+      await patchPreferences({ coaching_style: style })
+      toast.success("Coaching style saved")
+    } catch {
+      toast.error("Failed to save coaching style")
+    } finally {
+      setSavingCoaching(false)
+    }
+  }
+
+  const handleSaveNotifications = async () => {
+    setSavingNotifications(true)
+    try {
+      await patchPreferences({ notification_time: notificationTime })
+      toast.success("Notification time saved")
+    } catch {
+      toast.error("Failed to save notification time")
+    } finally {
+      setSavingNotifications(false)
+    }
+  }
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
@@ -49,7 +100,7 @@ export default function SettingsPage() {
 
       <div className="flex flex-col gap-6">
 
-        {/* Profile */}
+        {/* Profile — display name not yet wired (Supabase) */}
         <Card className="border-border bg-card">
           <CardHeader>
             <CardTitle className="text-base">Profile</CardTitle>
@@ -71,7 +122,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Coaching Style */}
+        {/* Coaching Style — auto-saves on selection */}
         <Card className="border-border bg-card">
           <CardHeader>
             <CardTitle className="text-base">Coaching Style</CardTitle>
@@ -82,12 +133,14 @@ export default function SettingsPage() {
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setCoachingStyle(option.value)}
+                disabled={!loaded || savingCoaching}
+                onClick={() => handleCoachingStyleChange(option.value)}
                 className={cn(
                   "flex flex-col items-start rounded-lg border px-4 py-3 text-left transition-colors",
                   coachingStyle === option.value
                     ? "border-primary bg-primary/5 text-foreground"
-                    : "border-border text-muted-foreground hover:bg-accent/50"
+                    : "border-border text-muted-foreground hover:bg-accent/50",
+                  (!loaded || savingCoaching) && "cursor-not-allowed opacity-60"
                 )}
               >
                 <span className="text-sm font-medium leading-none">{option.label}</span>
@@ -112,10 +165,17 @@ export default function SettingsPage() {
                 value={notificationTime}
                 onChange={(e) => setNotificationTime(e.target.value)}
                 className="w-32"
+                disabled={!loaded}
               />
             </div>
-            <Button variant="outline" size="sm" className="self-start" disabled>
-              Save Notifications
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-start"
+              disabled={!loaded || savingNotifications}
+              onClick={handleSaveNotifications}
+            >
+              {savingNotifications ? "Saving…" : "Save Notifications"}
             </Button>
           </CardContent>
         </Card>
