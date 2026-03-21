@@ -47,7 +47,7 @@ src/components/app/ → app components (see below)
 src/components/app/Navigation.tsx → sticky site-wide nav bar; accepts `userEmail: string | null` prop from layout; shows truncated email + sign-out button (desktop: after ThemeToggle; mobile: bottom of dropdown); sign-out calls the `signOut` server action via `<form action={signOut}>`
 src/components/app/theme-provider.tsx → next-themes provider (used in root layout)
 src/components/app/theme-toggle.tsx → light/dark/system dropdown toggle
-src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, weekly chart); accepts initialHabits: Habit[] prop from page.tsx; computes weeklyData (Mon–Sun of current UTC week mapped from habits' rolling weekly_data) and todayIndex (0=Mon…6=Sun) passed to WeeklyChart
+src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, weekly chart, coaching nudge); accepts initialHabits: Habit[] prop from page.tsx; computes weeklyData (Mon–Sun of current UTC week mapped from habits' rolling weekly_data) and todayIndex (0=Mon…6=Sun) passed to WeeklyChart; "Get nudge" button POSTs to /api/ai and streams the text/plain response inline using flushSync + requestAnimationFrame pattern
 src/components/app/DashboardCoachingPanel.tsx → Server Component; accepts entries: IAiCoaching[]; displays up to 3 most recent coaching entries — type label, truncated content preview (100 chars), relative date; shows "Coaching nudge pending" for null or placeholder content; data verification component, not final UI
 src/components/app/stats-card.tsx → single metric card (icon + value + subtitle)
 src/components/app/category-filter.tsx → pill buttons to filter habits by category

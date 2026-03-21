@@ -2,11 +2,13 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Target, Flame, CheckCircle2 } from "lucide-react"
+import { flushSync } from "react-dom"
+import { Target, Flame, CheckCircle2, Sparkles, Loader2 } from "lucide-react"
 import { HabitCard } from "./habits/HabitCard"
 import { CategoryFilter } from "./category-filter"
 import { StatsCard } from "./stats-card"
 import { WeeklyChart } from "./weekly-chart"
+import { Button } from "@/components/ui/button"
 import { Habit, Category } from "@/lib/types"
 import { NewHabitDialog } from "./habits/NewHabitDialog"
 
@@ -20,6 +22,9 @@ interface HabitDashboardProps {
 export function HabitDashboard({ initialHabits }: HabitDashboardProps) {
   const [habits, setHabits] = useState<Habit[]>(initialHabits)
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all")
+  const [nudge, setNudge] = useState<string | null>(null)
+  const [isLoadingNudge, setIsLoadingNudge] = useState(false)
+  const [nudgeError, setNudgeError] = useState<string | null>(null)
 
   const filteredHabits = useMemo(() => {
     if (selectedCategory === "all") return habits
@@ -98,6 +103,39 @@ export function HabitDashboard({ initialHabits }: HabitDashboardProps) {
     }
   }
 
+  const getNudge = async () => {
+    setIsLoadingNudge(true)
+    setNudgeError(null)
+    setNudge(null)
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      if (!res.ok) {
+        const data = await res.json() as { error?: string }
+        throw new Error(data.error ?? "Failed to generate nudge")
+      }
+      if (!res.body) throw new Error("No response body")
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ""
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        accumulated += decoder.decode(value, { stream: true })
+        flushSync(() => setNudge(accumulated))
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+      }
+    } catch (err) {
+      setNudgeError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setIsLoadingNudge(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8">
@@ -152,25 +190,42 @@ export function HabitDashboard({ initialHabits }: HabitDashboardProps) {
             <WeeklyChart data={weeklyData} todayIndex={todayIndex} />
 
             <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="mb-3 text-sm font-medium text-foreground">Quick Tips</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                  Start with small, achievable goals
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                  Stack new habits with existing ones
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                  Track your progress consistently
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                  Celebrate small wins along the way
-                </li>
-              </ul>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Coaching Nudge
+                </h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={getNudge}
+                  disabled={isLoadingNudge}
+                  className="h-7 text-xs"
+                >
+                  {isLoadingNudge ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                      Generating…
+                    </>
+                  ) : (
+                    "Get nudge"
+                  )}
+                </Button>
+              </div>
+              {nudgeError && (
+                <p className="text-xs text-destructive">{nudgeError}</p>
+              )}
+              {isLoadingNudge && !nudge && (
+                <p className="text-sm text-muted-foreground">Generating your coaching nudge…</p>
+              )}
+              {nudge && (
+                <p className="text-sm text-muted-foreground">{nudge}</p>
+              )}
+              {!nudge && !isLoadingNudge && !nudgeError && (
+                <p className="text-sm text-muted-foreground">
+                  Get a personalised nudge based on your habits.
+                </p>
+              )}
             </div>
           </div>
         </div>
