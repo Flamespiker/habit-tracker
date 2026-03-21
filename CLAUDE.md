@@ -30,12 +30,14 @@ src/app/goals/loading.tsx → goals page loading skeleton (header, list of GoalC
 src/app/goals/new/page.tsx → stub (TODO: goal creation form; POST /api/goals, redirect to /goals/[id])
 src/app/goals/[id]/edit/page.tsx → stub (TODO: pre-populated edit form; PATCH /api/goals/[id]; mark completed/abandoned; delete)
 src/app/log/ → daily log implemented (habit check-in toggles with strikethrough, notes textarea, disabled submit until Stage 3)
-src/app/settings/ → settings implemented (Profile: display name; Coaching Style: 3 selectable options; Notifications: time input — all saves disabled until Stage 3/4)
+src/app/settings/ → settings page; Profile save disabled (Supabase not yet wired); Coaching Style auto-saves to MongoDB on click; Notifications saves to MongoDB on button click; preferences loaded from GET /api/preferences on mount
 src/app/(auth)/login/page.tsx → login form (email + password); useActionState → signIn server action; links to /signup
 src/app/(auth)/signup/page.tsx → sign-up form (email + password + confirm password); useActionState → signUp server action; links to /login
 src/app/api/habits/route.ts → POST /api/habits (auth-gated: 401 if no session; creates habit for session user; returns mapped Habit)
 src/app/api/goals/route.ts → POST /api/goals (auth-gated: 401 if no session; creates goal + goal_habits rows for session user; returns mapped Goal)
 src/app/api/checkins/route.ts → POST /api/checkins (auth-gated: 401 if no session; upserts checkin by habit_id + date for session user)
+src/app/api/preferences/route.ts → GET /api/preferences (returns MongoDB user preferences, falls back to schema defaults); PATCH /api/preferences (upserts coaching_style and/or notification_time; validates each field)
+src/app/api/health/route.ts → GET /api/health (checks Supabase + MongoDB connectivity in parallel; returns { supabase, mongodb, timestamp } with 200 if all ok, 503 if any fail)
 src/components/ui/ → shadcn/ui (don't edit)
 src/components/app/ → app components (see below)
 src/components/app/Navigation.tsx → sticky site-wide nav bar; accepts `userEmail: string | null` prop from layout; shows truncated email + sign-out button (desktop: after ThemeToggle; mobile: bottom of dropdown); sign-out calls the `signOut` server action via `<form action={signOut}>`
@@ -61,6 +63,8 @@ src/lib/db/mongo/models/AiCoaching.ts → Mongoose model for `ai_coaching` colle
 src/lib/db/mongo/models/UserPreferences.ts → Mongoose model for `user_preferences` collection; fields: user_id (unique), coaching_style (motivational|analytical|gentle), notification_time, focus_areas (string[]), custom_settings (Mixed)
 src/lib/db/mongo/ai-coaching.ts → getCoachingHistory(userId, limit?), saveCoachingResponse(data)
 src/lib/db/mongo/user-preferences.ts → getUserPreferences(userId), saveUserPreferences(userId, prefs) — upserts on user_id
+src/lib/ai/prompts.ts → loadPrompt(name, variables): reads a YAML file from .claude/prompts/, parses it, interpolates {{variable}} placeholders, returns { model, system, user }
+.claude/prompts/ → YAML prompt files: daily-coaching-nudge.yaml, weekly-summary.yaml, habit-suggestion.yaml, goal-adjustment.yaml — each has name, description, version, model, system, and user_template fields
 src/lib/auth/actions.ts → Server Actions: signIn(prevState, formData), signUp(prevState, formData), signOut(); all use createClient() from server.ts
 src/proxy.ts → Next.js 15 proxy convention (replaces middleware.ts); refreshes Supabase session on every request; redirects unauthenticated users to /login; redirects authenticated users away from /login and /signup
 tests/ → Playwright tests

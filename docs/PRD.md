@@ -286,12 +286,25 @@ All routes require an authenticated session. User ID is always read server-side 
 | `POST` | `/api/ai` | Generate a coaching insight from today's log; store result in `ai_coaching` | MongoDB (write), Supabase (read log data) |
 | `GET` | `/api/ai/[goalId]` | Fetch past AI insights for a specific goal | MongoDB |
 
-### Settings
+### Preferences
 
 | Method | Path | What it does | DB |
 |---|---|---|---|
-| `GET` | `/api/settings` | Get current user's profile and preferences | Supabase + MongoDB |
-| `PATCH` | `/api/settings` | Update profile (display name, avatar) and/or preferences (theme, notifications) | Supabase + MongoDB |
+| `GET` | `/api/preferences` ✅ | Get coaching style, notification time, focus areas | MongoDB |
+| `PATCH` | `/api/preferences` ✅ | Update coaching style and/or notification time | MongoDB |
+
+### Settings (profile — not yet implemented)
+
+| Method | Path | What it does | DB |
+|---|---|---|---|
+| `GET` | `/api/settings` | Get display name and avatar | Supabase |
+| `PATCH` | `/api/settings` | Update display name and/or avatar | Supabase |
+
+### Utilities
+
+| Method | Path | What it does | DB |
+|---|---|---|---|
+| `GET` | `/api/health` ✅ | Check Supabase + MongoDB connectivity; returns `{ supabase, mongodb, timestamp }` | Both |
 
 ---
 ## Build Order
@@ -303,15 +316,17 @@ Each stage ends with something fully usable — not just wired up, but shippable
 | **1 — Scaffold & Deploy** | 1–2 | Next.js project, Vercel deploy, GitHub repo, CI skeleton, page routes scaffolded | A live URL exists. Every page loads (even if blank). You can push code and see it deploy. |
 | **2 — UI with mock data** ✅ | 3–4 | Habit dashboard, HabitCard, check-in toggle, streak display, habit detail page, goal list + detail, NewHabitDialog, NewGoalDialog, daily log, settings, site-wide Navigation, loading skeletons — all with mock data. Remaining: auth pages only. | The full app is navigable and looks real. You can demo the UI without a backend. |
 | **3 — Supabase backend** (in progress) | 5–6 | Postgres schema ✅, Supabase client ✅, generated DB types ✅, habits/goals/checkins query functions ✅, POST /api/habits ✅, POST /api/goals ✅ (incl. goal_habits), POST /api/checkins ✅ (upsert by habit_id+date), dashboard + habits + goals pages fetch real data ✅, check-in toggle persists to Supabase ✅, completed_today derived from real checkins ✅, email/password auth (login + signup pages + Server Actions) ✅, proxy.ts route protection ✅, all routes use authenticated server client + session user ID ✅, sign-out button + email indicator in Navigation ✅, streak + weekly_data derived from checkins in toHabit() ✅, weekly chart shows correct Mon–Sun week with today highlighted ✅ — remaining: RLS policies | You can sign up, log in, create habits and goals, and check in — data persists. The core loop works end-to-end. |
-| **4 — MongoDB + dual DB** | 7–8 | MongoDB Atlas cluster ✅, Mongoose models (`AiCoaching`, `UserPreferences`) ✅, query functions (`ai-coaching.ts`, `user-preferences.ts`) ✅ — remaining: API routes wired to both DBs (`/api/settings`, `/api/ai`) | Settings (theme, notifications) persist. The app reads/writes both databases. The AI data layer is ready to receive responses. |
+| **4 — MongoDB + dual DB** | 7–8 | MongoDB Atlas cluster ✅, Mongoose models (`AiCoaching`, `UserPreferences`) ✅, query functions (`ai-coaching.ts`, `user-preferences.ts`) ✅, `GET /api/preferences` + `PATCH /api/preferences` ✅, settings page wired (coaching style + notification time persist) ✅, prompt library (`src/lib/ai/prompts.ts` + `.claude/prompts/`) ✅ — remaining: `/api/ai` | Settings (theme, notifications) persist. The app reads/writes both databases. The AI data layer is ready to receive responses. |
 | **5 — AI coaching** | 9–10 | Claude API integration, streaming coaching nudge on daily log submit, coaching history display, weekly LangChain summary agent | After checking in, you get a real AI coaching message. Past insights are visible on goal detail pages. The app is genuinely useful. |
 | **6 — Tests & CI/CD** | 11–12 | Playwright test suite (login, habit creation, check-in, goal creation), GitHub Actions pipeline, Claude PR review agent | Every push runs tests automatically. PRs get AI review. Broken builds are caught before merge. |
 | **7 — Automation** | 13–14 | n8n local workflows, daily 8am cron → fetch habits → call Claude → save nudge to MongoDB, LangGraph weekly summary agent | The app coaches you without you opening it. Daily nudges and weekly summaries arrive automatically. |
 | **8 — Polish & v1.0** | 15–16 | RLS audit, query optimisation, image optimisation, Claude Cowork daily journal, custom Skills, full end-to-end review | A fast, secure, fully automated personal app. Every page works, every flow is tested. This is v1.0. |
 
 ## Open decisions / unknowns
-  Things you haven't decided yet: What does the AI prompt look like? What triggers a goal as "completed"?
+  Things you haven't decided yet: What triggers a goal as "completed"?
   Parking these explicitly prevents them from becoming silent assumptions in the code.
+
+- AI prompt structure: resolved — prompts live in `.claude/prompts/` as YAML files with `system` and `user_template` fields; loaded and interpolated at runtime by `src/lib/ai/prompts.ts`.
 
 - Goal → habit linking: `goal_habits` join table writes implemented (POST /api/goals inserts rows). Reads not yet implemented — `toGoal()` stubs `habit_ids: []` until a query joining `goals` + `goal_habits` is added.
 - GoalStatus values: `active | completed | abandoned` (not `paused` — removed from type definition).
