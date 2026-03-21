@@ -1,11 +1,11 @@
 // TODO: Stage 3 — replace mockHabits with GET /api/log, and wire the submit button to
 // POST /api/log (habits + notes), then trigger POST /api/ai for a coaching insight.
 
-// 'use client' required: manages habit check-in toggle state and journal notes field.
+// 'use client' required: manages habit check-in toggle state, journal notes field, and coaching nudge fetch.
 "use client"
 
-import { useState } from "react"
-import { Check } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Check, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { mockHabits } from "@/lib/mock-data"
 import { Habit, categoryColors, categoryLabels } from "@/lib/types"
+import type { IAiCoaching } from "@/lib/db/mongo/models/AiCoaching"
 
 // Native <textarea> styled to match the shadcn Input component.
 const textareaClassName = cn(
@@ -39,6 +40,16 @@ function formatToday(): string {
 export default function LogPage() {
   const [habits, setHabits] = useState<Habit[]>(mockHabits)
   const [notes, setNotes] = useState("")
+  const [latestNudge, setLatestNudge] = useState<IAiCoaching | null>(null)
+
+  useEffect(() => {
+    fetch("/api/coaching?limit=1")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: IAiCoaching[] | null) => {
+        if (Array.isArray(data) && data.length > 0) setLatestNudge(data[0])
+      })
+      .catch(() => undefined)
+  }, [])
 
   const completedCount = habits.filter((h) => h.completed_today).length
 
@@ -56,6 +67,25 @@ export default function LogPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Daily Log</h1>
         <p className="mt-1 text-sm text-muted-foreground">{formatToday()}</p>
       </div>
+
+      {/* Coaching nudge — shown when a previous AI nudge exists */}
+      {latestNudge && (
+        <Card className="mb-6 border-border bg-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Coach&apos;s Note
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {typeof latestNudge.content === "string"
+                ? latestNudge.content
+                : JSON.stringify(latestNudge.content)}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Habit checklist */}
       <Card className="mb-6 border-border bg-card">

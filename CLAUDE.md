@@ -29,7 +29,7 @@ src/app/goals/ → goals list — async Server Component fetching real data; del
 src/app/goals/loading.tsx → goals page loading skeleton (header, list of GoalCardSkeletons)
 src/app/goals/new/page.tsx → stub (TODO: goal creation form; POST /api/goals, redirect to /goals/[id])
 src/app/goals/[id]/edit/page.tsx → stub (TODO: pre-populated edit form; PATCH /api/goals/[id]; mark completed/abandoned; delete)
-src/app/log/ → daily log implemented (habit check-in toggles with strikethrough, notes textarea, disabled submit until Stage 3)
+src/app/log/ → daily log implemented (habit check-in toggles with strikethrough, notes textarea, disabled submit until Stage 3); fetches GET /api/coaching?limit=1 on mount and displays the most recent coaching nudge in a "Coach's Note" card above the habit checklist (hidden when no nudge exists)
 src/app/settings/ → settings page; Profile save disabled (Supabase not yet wired); Coaching Style auto-saves to MongoDB on click; Notifications saves to MongoDB on button click; preferences loaded from GET /api/preferences on mount
 src/app/(auth)/login/page.tsx → login form (email + password); useActionState → signIn server action; links to /signup
 src/app/(auth)/signup/page.tsx → sign-up form (email + password + confirm password); useActionState → signUp server action; links to /login
@@ -37,6 +37,7 @@ src/app/api/habits/route.ts → POST /api/habits (auth-gated: 401 if no session;
 src/app/api/goals/route.ts → POST /api/goals (auth-gated: 401 if no session; creates goal + goal_habits rows for session user; returns mapped Goal)
 src/app/api/checkins/route.ts → POST /api/checkins (auth-gated: 401 if no session; upserts checkin by habit_id + date for session user)
 src/app/api/preferences/route.ts → GET /api/preferences (returns MongoDB user preferences, falls back to schema defaults); PATCH /api/preferences (upserts coaching_style and/or notification_time; validates each field)
+src/app/api/coaching/route.ts → GET /api/coaching (returns coaching history from MongoDB via getCoachingHistory(); accepts optional ?limit=N param, default 20, clamped 1–100); POST /api/coaching (saves a new coaching response via saveCoachingResponse(); body: { type, content, model, habit_context? }; validates type enum + required fields; returns 201)
 src/app/api/health/route.ts → GET /api/health (checks Supabase + MongoDB connectivity in parallel; returns { supabase, mongodb, timestamp } with 200 if all ok, 503 if any fail)
 src/components/ui/ → shadcn/ui (don't edit)
 src/components/app/ → app components (see below)
