@@ -5,6 +5,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { flushSync } from "react-dom"
 import { Check, Loader2, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -67,15 +68,30 @@ export default function LogPage() {
   const logDay = async () => {
     setIsLogging(true)
     setLogError(null)
+    setFreshNudge(null)
     try {
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ journal_entry: notes }),
       })
-      const data = await res.json() as { nudge?: string; error?: string }
-      if (!res.ok) throw new Error(data.error ?? "Failed to generate nudge")
-      setFreshNudge(data.nudge ?? null)
+      if (!res.ok) {
+        const data = await res.json() as { error?: string }
+        throw new Error(data.error ?? "Failed to generate nudge")
+      }
+      if (!res.body) throw new Error("No response body")
+
+      // Consume the text/plain stream chunk by chunk
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ""
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        accumulated += decoder.decode(value, { stream: true })
+        flushSync(() => setFreshNudge(accumulated))
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+      }
     } catch (err) {
       setLogError(err instanceof Error ? err.message : "Something went wrong")
     } finally {
