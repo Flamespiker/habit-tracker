@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from '@/components/app/theme-provider'
 import { Navigation } from '@/components/app/Navigation'
+import { SupportChat } from '@/components/app/support-chat'
 import { createClient } from '@/lib/db/supabase/server'
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default async function RootLayout({
         >
           <Navigation userEmail={user?.email ?? null} />
           {children}
+          <SupportChat isAuthenticated={!!user} />
         </ThemeProvider>
       </body>
     </html>

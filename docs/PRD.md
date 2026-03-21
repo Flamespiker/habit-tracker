@@ -1,6 +1,6 @@
  Product Requirements Document — Habit & Goal Tracker
 
-  Last updated: 2026-03-20 | Status: In development | Owner: Personal / solo use
+  Last updated: 2026-03-21 | Status: In development | Owner: Personal / solo use
 
   ---
   Problem Statement
@@ -39,6 +39,7 @@
   - Overview of today's habits, stats (total habits, completed today, streak), and weekly activity chart
   - Fetches habits + checkins (Supabase) and coaching history (MongoDB) in parallel via Promise.all
   - Displays 3 most recent coaching entries via DashboardCoachingPanel (data verification — not final UI)
+  - "Get nudge" button in sidebar streams a daily coaching nudge inline via POST /api/ai (flushSync + rAF pattern)
   - Route: /
 
   1. Habit Management
@@ -58,16 +59,20 @@
 
   - Checklist of today's habits — mark complete / incomplete
   - Mood score input + free-text journal entry
-  - Displays most recent coaching nudge ("Coach's Note" card) fetched from GET /api/coaching on page load
-  - On submit: POST /api/log → triggers AI insight generation via /api/ai
+  - Displays most recent coaching nudge or weekly summary ("Coach's Note" / "Weekly Summary" card) fetched from GET /api/coaching on page load; weekly_summary entries render as structured sections (overview, highlights, struggles, recommendation)
+  - "Log Day" button: POST /api/ai → streams daily coaching nudge inline
+  - "Generate weekly summary" button: POST /api/weekly-summary → LangGraph agent fetches 7-day habit data + coaching history, generates structured WeeklySummaryContent, saves to MongoDB; coaching card refreshes automatically on completion
   - Route: /log
 
   4. AI Coaching
 
-  - Insights stored in MongoDB (flexible schema)
+  - Insights stored in MongoDB (flexible schema); types: daily_nudge, weekly_summary, suggestion
   - Retrieved via GET /api/coaching; saved via POST /api/coaching
-  - Generated per log entry (via /api/ai — planned); surfaced on daily log and goal detail pages
-  - Powered by Claude API
+  - Daily nudge: streamed via POST /api/ai (Vercel AI SDK v6 streamText + @ai-sdk/anthropic); surfaced on daily log and dashboard
+  - Weekly summary: LangGraph ReAct agent (src/lib/ai/weekly-summary-agent.ts) via POST /api/weekly-summary; structured WeeklySummaryContent (overview, highlights, struggles, recommendation)
+  - Support agent: LangGraph ReAct agent (src/lib/ai/support-agent.ts) via POST /api/support; answers questions about the app using getAppHelp, getUserHabits, and getCoachingHistory tools; returns plain text
+  - Support chat UI: floating widget (src/components/app/support-chat.tsx) fixed bottom-right on every page via root layout; chat bubble conversation history; hidden on login/signup
+  - Powered by Claude (claude-sonnet-4-6) via @langchain/anthropic (agents) and @ai-sdk/anthropic (streaming nudge)
 
   5. Auth
 
@@ -290,6 +295,8 @@ All routes require an authenticated session. User ID is always read server-side 
 | `GET` | `/api/coaching` ✅ | Fetch coaching history for the current user; accepts optional `?limit=N` (default 20, max 100) | MongoDB |
 | `POST` | `/api/coaching` ✅ | Save a coaching response; body: `{ type, content, model, habit_context? }`; validates type enum; returns 201 | MongoDB |
 | `POST` | `/api/ai` ✅ | Stream a daily coaching nudge via Vercel AI SDK v6 `streamText` + `@ai-sdk/anthropic`; fetches habits + checkins + preferences in parallel; `onFinish` saves completed nudge to MongoDB; returns `text/plain` streaming response | MongoDB (write), Supabase (read) |
+| `POST` | `/api/weekly-summary` ✅ | Run LangGraph weekly summary agent; fetches 7-day habit data + coaching history; saves `WeeklySummaryContent` to MongoDB as `type: 'weekly_summary'`; returns `{ summary }` 201 | MongoDB (write), Supabase (read) |
+| `POST` | `/api/support` ✅ | Run LangGraph support agent; body: `{ question: string }`; 400 if missing; agent selectively calls `getAppHelp`, `getUserHabits`, `getCoachingHistory` tools; returns `{ answer }` plain text 200 | MongoDB (read), Supabase (read) |
 | `GET` | `/api/ai/[goalId]` | Fetch past AI insights for a specific goal | MongoDB |
 
 ### Preferences
@@ -323,7 +330,7 @@ Each stage ends with something fully usable — not just wired up, but shippable
 | **2 — UI with mock data** ✅ | 3–4 | Habit dashboard, HabitCard, check-in toggle, streak display, habit detail page, goal list + detail, NewHabitDialog, NewGoalDialog, daily log, settings, site-wide Navigation, loading skeletons — all with mock data. Remaining: auth pages only. | The full app is navigable and looks real. You can demo the UI without a backend. |
 | **3 — Supabase backend** ✅ | 5–6 | Postgres schema ✅, Supabase client ✅, generated DB types ✅, habits/goals/checkins query functions ✅, getHabitById (ownership-scoped) ✅, POST /api/habits ✅, POST /api/goals ✅ (incl. goal_habits), POST /api/checkins ✅ (upsert by habit_id+date), dashboard + habits + goals pages fetch real data ✅, habits/[id] page wired to real Supabase data (30-day checkin window, notFound on missing/wrong-user habit) ✅, check-in toggle persists to Supabase ✅, completed_today derived from real checkins ✅, email/password auth (login + signup pages + Server Actions) ✅, proxy.ts route protection ✅, all routes use authenticated server client + session user ID ✅, sign-out button + email indicator in Navigation ✅, streak + weekly_data derived from checkins in toHabit() ✅, weekly chart shows correct Mon–Sun week with today highlighted ✅, RLS migration written (supabase/migrations/20260320000000_add_rls_policies.sql) ✅ — apply via Supabase SQL editor to enforce DB-level access control | You can sign up, log in, create habits and goals, and check in — data persists. The core loop works end-to-end. RLS enforces ownership at the DB level. |
 | **4 — MongoDB + dual DB** | 7–8 | MongoDB Atlas cluster ✅, Mongoose models (`AiCoaching`, `UserPreferences`) ✅, query functions (`ai-coaching.ts`, `user-preferences.ts`) ✅, `GET /api/preferences` + `PATCH /api/preferences` ✅, settings page wired (coaching style + notification time persist) ✅, prompt library (`src/lib/ai/prompts.ts` + `.claude/prompts/`) ✅, `GET /api/coaching` + `POST /api/coaching` ✅, daily log displays most recent coaching nudge ✅, checkins dual-DB write (placeholder nudge to MongoDB on completion) ✅, dashboard fetches Supabase + MongoDB in parallel + DashboardCoachingPanel ✅ — remaining: `/api/ai` (Claude API call) | Settings, coaching history, and dual-DB writes all work. The dashboard surfaces MongoDB data alongside Supabase. The AI data layer is fully wired and ready for real Claude responses. |
-| **5 — AI coaching** (in progress) | 9–10 | `@anthropic-ai/sdk` + Vercel AI SDK v6 (`ai`, `@ai-sdk/anthropic`) installed ✅, `POST /api/ai` streams via `streamText` + `toTextStreamResponse()` ✅, `onFinish` saves to MongoDB ✅, daily log wired to real Supabase habits (Server/Client split: LogClient) ✅, placeholder nudge write removed from checkins route ✅, "Log Day" streams via fetch + ReadableStream + flushSync + rAF ✅ — remaining: weekly summary agent, coaching history on goal detail pages | After clicking Log Day, a real AI coaching nudge is generated from live habit data. The core AI loop works end-to-end. |
+| **5 — AI coaching** ✅ | 9–10 | `@anthropic-ai/sdk` + Vercel AI SDK v6 (`ai`, `@ai-sdk/anthropic`) installed ✅, `POST /api/ai` streams via `streamText` + `toTextStreamResponse()` ✅, `onFinish` saves to MongoDB ✅, daily log wired to real Supabase habits (Server/Client split: LogClient) ✅, placeholder nudge write removed from checkins route ✅, "Log Day" streams via fetch + ReadableStream + flushSync + rAF ✅, dashboard "Get nudge" button streams inline ✅, LangGraph weekly summary agent (`src/lib/ai/weekly-summary-agent.ts`) ✅, `POST /api/weekly-summary` ✅, "Generate weekly summary" button in LogClient with structured WeeklySummaryView ✅, LangGraph support agent (`src/lib/ai/support-agent.ts`) ✅, `POST /api/support` ✅, floating support chat widget (`src/components/app/support-chat.tsx`) in root layout ✅ — remaining: coaching history on goal detail pages | A real AI coaching nudge is generated from live habit data. Weekly summaries, support chat, and dashboard nudges all work end-to-end. |
 | **6 — Tests & CI/CD** | 11–12 | Playwright test suite (login, habit creation, check-in, goal creation), GitHub Actions pipeline, Claude PR review agent | Every push runs tests automatically. PRs get AI review. Broken builds are caught before merge. |
 | **7 — Automation** | 13–14 | n8n local workflows, daily 8am cron → fetch habits → call Claude → save nudge to MongoDB, LangGraph weekly summary agent | The app coaches you without you opening it. Daily nudges and weekly summaries arrive automatically. |
 | **8 — Polish & v1.0** | 15–16 | RLS audit, query optimisation, image optimisation, Claude Cowork daily journal, custom Skills, full end-to-end review | A fast, secure, fully automated personal app. Every page works, every flow is tested. This is v1.0. |
