@@ -7,13 +7,31 @@ const TYPE_LABELS: Record<IAiCoaching['type'], string> = {
   suggestion:      'Suggestion',
 }
 
+interface WeeklySummaryContent {
+  overview: string
+  highlights: string[]
+  struggles: string[]
+  recommendation: string
+}
+
+function isWeeklySummaryContent(v: unknown): v is WeeklySummaryContent {
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    'overview' in v &&
+    'highlights' in v &&
+    'struggles' in v &&
+    'recommendation' in v
+  )
+}
+
 function getContentPreview(content: unknown): string {
   if (content === null || content === undefined) return 'Coaching nudge pending'
   if (typeof content === 'object' && 'placeholder' in (content as Record<string, unknown>)) {
     return 'Coaching nudge pending'
   }
   const str = typeof content === 'string' ? content : JSON.stringify(content)
-  return str.length > 100 ? str.slice(0, 100) + '…' : str
+  return str.length > 120 ? str.slice(0, 120) + '…' : str
 }
 
 function relativeDate(date: Date): string {
@@ -66,13 +84,36 @@ export function DashboardCoachingPanel({ entries }: Props) {
                 {relativeDate(entry.created_at)}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {getContentPreview(entry.content)}
-            </p>
+            {entry.type === 'weekly_summary' && isWeeklySummaryContent(entry.content) ? (
+              <WeeklySummaryPreview content={entry.content} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {getContentPreview(entry.content)}
+              </p>
+            )}
           </div>
         ))}
       </CardContent>
     </Card>
+  )
+}
+
+/** Compact weekly summary preview for the dashboard coaching panel. */
+function WeeklySummaryPreview({ content }: { content: WeeklySummaryContent }) {
+  const overview = content.overview.length > 120
+    ? content.overview.slice(0, 120) + '…'
+    : content.overview
+  return (
+    <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+      <p>{overview}</p>
+      {content.highlights.length > 0 && (
+        <p className="text-xs">
+          <span className="font-medium text-foreground">Highlights: </span>
+          {content.highlights.slice(0, 2).join(' · ')}
+          {content.highlights.length > 2 ? ` · +${content.highlights.length - 2} more` : ''}
+        </p>
+      )}
+    </div>
   )
 }
 

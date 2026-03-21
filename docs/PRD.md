@@ -38,7 +38,7 @@
 
   - Overview of today's habits, stats (total habits, completed today, streak), and weekly activity chart
   - Fetches habits + checkins (Supabase) and coaching history (MongoDB) in parallel via Promise.all
-  - Displays 3 most recent coaching entries via DashboardCoachingPanel (data verification — not final UI)
+  - Displays 3 most recent coaching entries via DashboardCoachingPanel; weekly_summary entries render as overview + highlights preview; daily_nudge/suggestion render as truncated text
   - "Get nudge" button in sidebar streams a daily coaching nudge inline via POST /api/ai (flushSync + rAF pattern)
   - Route: /
 
