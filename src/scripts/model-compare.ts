@@ -57,7 +57,7 @@ const CONFIGS: Config[] = [
   },
   {
     label: "haiku-3-5 | temp 0.5 | fast/cheap",
-    model: "claude-haiku-3-5-20251001",
+    model: "claude-haiku-3-5-20250307",
     temperature: 0.5,
     max_tokens: 150,
   },
@@ -149,7 +149,7 @@ async function runComparison(): Promise<void> {
   }
 
   // --- Save to file for reference ---
-  const outPath = "scripts/model-compare-results.json";
+  const outPath = "src/scripts/model-compare-results.json";
   fs.writeFileSync(outPath, JSON.stringify(results, null, 2));
   console.log(`\n💾 Full results saved to ${outPath}`);
 }

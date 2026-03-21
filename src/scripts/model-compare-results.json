@@ -1,0 +1,32 @@
+[
+  {
+    "label": "sonnet-4-6 | temp 0.3 | focused",
+    "model": "claude-sonnet-4-6",
+    "temperature": 0.3,
+    "max_tokens": 150,
+    "response": "📚 **12 days of reading — that's real momentum!** Your morning run streak is sitting at 5 days and waiting for you — don't let it sleep in when you don't have to. And hey, even 5 minutes of meditation today turns that zero into a starting line. 🏃‍♂️✨",
+    "input_tokens": 181,
+    "output_tokens": 79,
+    "latency_ms": 5086
+  },
+  {
+    "label": "sonnet-4-6 | temp 0.8 | creative",
+    "model": "claude-sonnet-4-6",
+    "temperature": 0.8,
+    "max_tokens": 150,
+    "response": "📚 That 12-day reading streak is seriously impressive — you're building a real identity as a reader! Don't let day 6 of your morning run slip away; lace up and protect that momentum. And hey, even 2 minutes of meditation today starts getting that streak off zero. 💪",
+    "input_tokens": 181,
+    "output_tokens": 71,
+    "latency_ms": 2936
+  },
+  {
+    "label": "sonnet-4-6 | temp 0.5 | balanced",
+    "model": "claude-sonnet-4-6",
+    "temperature": 0.5,
+    "max_tokens": 300,
+    "response": "📚 **12 days of reading — that's real momentum!** Don't let your morning run streak slip at day 5 — lace up and keep that chain alive. And hey, even 2 minutes of meditation today gets Meditate off zero and back in the game! 💪",
+    "input_tokens": 181,
+    "output_tokens": 69,
+    "latency_ms": 4159
+  }
+]
