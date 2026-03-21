@@ -31,13 +31,13 @@ src/app/goals/ → goals list — async Server Component fetching real data; del
 src/app/goals/loading.tsx → goals page loading skeleton (header, list of GoalCardSkeletons)
 src/app/goals/new/page.tsx → stub (TODO: goal creation form; POST /api/goals, redirect to /goals/[id])
 src/app/goals/[id]/edit/page.tsx → stub (TODO: pre-populated edit form; PATCH /api/goals/[id]; mark completed/abandoned; delete)
-src/app/log/ → daily log; habit check-in toggles with strikethrough, notes textarea; fetches GET /api/coaching?limit=1 on mount for historical nudge; "Log Day" button POSTs to /api/ai with { journal_entry } — streams response via fetch + ReadableStream reader; each chunk is committed with flushSync() + requestAnimationFrame() to force per-chunk renders; shows Loader2 + "Generating nudge…" while streaming; shows error in text-destructive on failure
+src/app/log/ → thin async Server Component; fetches real habits + today's checkins from Supabase (getHabits + getTodayCheckins in parallel); auth-gated with redirect('/login'); passes initialHabits to LogClient
 src/app/settings/ → settings page; Profile save disabled (Supabase not yet wired); Coaching Style auto-saves to MongoDB on click; Notifications saves to MongoDB on button click; preferences loaded from GET /api/preferences on mount
 src/app/(auth)/login/page.tsx → login form (email + password); useActionState → signIn server action; links to /signup
 src/app/(auth)/signup/page.tsx → sign-up form (email + password + confirm password); useActionState → signUp server action; links to /login
 src/app/api/habits/route.ts → POST /api/habits (auth-gated: 401 if no session; creates habit for session user; returns mapped Habit)
 src/app/api/goals/route.ts → POST /api/goals (auth-gated: 401 if no session; creates goal + goal_habits rows for session user; returns mapped Goal)
-src/app/api/checkins/route.ts → POST /api/checkins (auth-gated: 401 if no session; upserts checkin by habit_id + date for session user; on completed=true fires a fire-and-forget placeholder daily_nudge write to MongoDB via saveCoachingResponse() — MongoDB failure never breaks the checkin response; real Claude call replaces placeholder in Phase 5)
+src/app/api/checkins/route.ts → POST /api/checkins (auth-gated: 401 if no session; upserts checkin by habit_id + date for session user; returns { checkin })
 src/app/api/preferences/route.ts → GET /api/preferences (returns MongoDB user preferences, falls back to schema defaults); PATCH /api/preferences (upserts coaching_style and/or notification_time; validates each field)
 src/app/api/coaching/route.ts → GET /api/coaching (returns coaching history from MongoDB via getCoachingHistory(); accepts optional ?limit=N param, default 20, clamped 1–100); POST /api/coaching (saves a new coaching response via saveCoachingResponse(); body: { type, content, model, habit_context? }; validates type enum + required fields; returns 201)
 src/app/api/ai/route.ts → POST /api/ai (auth-gated; fetches habits + today's checkins (Supabase) + user preferences (MongoDB) in parallel; loads daily-coaching-nudge prompt via loadPrompt(); streams response via Vercel AI SDK v6 streamText() + @ai-sdk/anthropic provider; onFinish callback saves completed nudge to MongoDB via saveCoachingResponse(); returns toTextStreamResponse() — text/plain streaming response)
@@ -59,6 +59,7 @@ src/components/app/habits/NewHabitDialog.tsx → trigger button + dialog form; P
 src/components/app/goals/GoalsClient.tsx → Client Component managing goals state; receives initialGoals + habits from the Server Component page; wires onAdd to NewGoalDialog
 src/components/app/goals/GoalCardSkeleton.tsx → loading skeleton matching goal row shape (title, linked habits, status badge, date)
 src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form; POSTs to /api/goals and calls onAdd(goal) on success
+src/components/app/log/LogClient.tsx → Client Component; receives initialHabits: Habit[] from the log Server Component; manages habit toggle state (local only), journal notes, and streaming coaching nudge; "Log Day" POSTs to /api/ai, streams text/plain response via fetch + ReadableStream, commits each chunk with flushSync() + requestAnimationFrame(); shows historical nudge from GET /api/coaching on mount
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus) + database.types.ts (Supabase-generated; Tables<T>, TablesInsert<T>, TablesUpdate<T>)
 src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
