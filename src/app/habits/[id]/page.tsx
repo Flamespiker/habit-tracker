@@ -1,13 +1,13 @@
-// TODO: Replace mockHabits lookup with a direct src/lib/db/supabase/ call once Stage 3 is built.
-
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { ArrowLeft, Flame } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { mockHabits } from "@/lib/mock-data"
+import { createClient } from "@/lib/db/supabase/server"
+import { getHabitById, toHabit } from "@/lib/db/supabase/habits"
+import { getCheckins } from "@/lib/db/supabase/checkins"
 import { categoryColors, categoryLabels } from "@/lib/types"
 
 interface HabitDetailPageProps {
@@ -25,13 +25,27 @@ const frequencyLabels: Record<"daily" | "weekly" | "custom", string> = {
 /**
  * Detail page for a single habit.
  * Displays habit metadata, streak, and a weekly completion grid.
- * Server Component — reads directly from mock data (will read from lib/db/supabase/ in Stage 3).
+ * Server Component — fetches real data from Supabase.
  */
 export default async function HabitDetailPage({ params }: HabitDetailPageProps) {
   const { id } = await params
-  const habit = mockHabits.find((h) => h.id === id)
 
-  if (!habit) notFound()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const todayDate = new Date()
+  const today = todayDate.toISOString().split('T')[0]
+  const thirtyDaysAgo = new Date(todayDate.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+  const [habitRow, checkins] = await Promise.all([
+    getHabitById(user.id, id, supabase),
+    getCheckins(id, thirtyDaysAgo, today, supabase),
+  ])
+
+  if (!habitRow) notFound()
+
+  const habit = toHabit(habitRow, checkins)
 
   const colors = categoryColors[habit.category]
   const completedCount = habit.weekly_data.filter((v) => v > 0).length

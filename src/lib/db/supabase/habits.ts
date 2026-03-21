@@ -88,6 +88,26 @@ export async function getHabits(userId: string, client?: Client): Promise<HabitR
 }
 
 /**
+ * Fetches a single habit by ID, scoped to the given user.
+ * Returns null if no matching row exists or the habit belongs to a different user.
+ */
+export async function getHabitById(userId: string, habitId: string, client?: Client): Promise<HabitRow | null> {
+  const supabase = client ?? await createClient()
+  const { data, error } = await supabase
+    .from('habits')
+    .select('*')
+    .eq('id', habitId)
+    .eq('user_id', userId)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null // no rows found
+    throw error
+  }
+  return data
+}
+
+/**
  * Inserts a new habit and returns the created row.
  * Pass `client` to override the default server client (e.g. the admin client in API routes).
  */
