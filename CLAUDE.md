@@ -21,7 +21,7 @@ src/app/ → Next.js pages and API routes
 src/app/layout.tsx → root layout — async Server Component; fetches session user via createClient() + getUser(), passes userEmail to Navigation
 src/app/page.tsx → dashboard (route: /) — async Server Component; fetches habits + checkins (Supabase) and coaching history (MongoDB) in parallel via Promise.all; passes habits to HabitDashboard and 3 most recent coaching entries to DashboardCoachingPanel
 src/app/loading.tsx → dashboard loading skeleton (stats cards, habit card grid, chart column)
-src/app/habits/ → habits list — async Server Component fetching real data; delegates toggle state to HabitsClient + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid)
+src/app/habits/ → habits list — async Server Component fetching real data; delegates toggle state to HabitsClient + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid; fetches real data via getHabitById + getCheckins in parallel; notFound() if habit missing or wrong user)
 src/app/habits/loading.tsx → habits page loading skeleton (header, grid of HabitCardSkeletons)
 src/app/habits/new/page.tsx → stub (TODO: habit creation form; POST /api/habits, redirect to /habits/[id])
 src/app/habits/[id]/edit/page.tsx → stub (TODO: pre-populated edit form; PATCH /api/habits/[id]; DELETE /api/habits/[id] with redirect to /habits)
@@ -59,7 +59,8 @@ src/components/app/goals/NewGoalDialog.tsx → trigger button + dialog form; POS
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus) + database.types.ts (Supabase-generated; Tables<T>, TablesInsert<T>, TablesUpdate<T>)
 src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
-src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS; not used by app routes, kept for DB migrations/scripts), habits.ts (getHabits, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getTodayCheckins, getCheckins, createCheckin, upsertCheckin, getCheckinsForPeriod, updateCheckin)
+src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS; only used by health check, not app routes), habits.ts (getHabits, getHabitById, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, createGoal, updateGoal, createGoalHabits, toGoal), checkins.ts (getTodayCheckins, getCheckins, createCheckin, upsertCheckin, getCheckinsForPeriod, updateCheckin)
+supabase/migrations/20260320000000_add_rls_policies.sql → enables RLS on habits, goals, checkins, goal_habits; adds SELECT/INSERT/UPDATE/DELETE policies scoped to auth.uid() = user_id for habits/goals/checkins; goal_habits policies check ownership via goal_id IN (SELECT id FROM goals WHERE user_id = auth.uid()); apply via Supabase SQL editor or supabase db push
 src/lib/db/mongo/client.ts → cached Mongoose connection via `connectToMongoDB()`; caches on `global._mongooseCache` so the connection survives Next.js hot reloads and is reused across serverless invocations; reads MONGODB_URI env var
 src/lib/db/mongo/models/AiCoaching.ts → Mongoose model for `ai_coaching` collection; fields: user_id, type (daily_nudge|weekly_summary|suggestion), habit_context (Mixed), content (Mixed), created_at, model
 src/lib/db/mongo/models/UserPreferences.ts → Mongoose model for `user_preferences` collection; fields: user_id (unique), coaching_style (motivational|analytical|gentle), notification_time, focus_areas (string[]), custom_settings (Mixed)
