@@ -12,6 +12,8 @@ Personal hobby app. Not commercial. Only user is me.
 - Vercel (Hobby plan — personal use)
 - Playwright (E2E tests)
 - GitHub Actions + Claude Code Action (CI/CD + PR reviews)
+- Vercel AI SDK v6 (`ai@6`) + `@ai-sdk/anthropic` — streaming AI responses via `streamText()` + `toTextStreamResponse()`
+- `@anthropic-ai/sdk` — installed but superseded by `@ai-sdk/anthropic` for the `/api/ai` route
 
 ## shadcn/ui Components (installed)
 badge, button, card, dialog, dropdown-menu, input, label, progress, skeleton, sonner, table
@@ -29,7 +31,7 @@ src/app/goals/ → goals list — async Server Component fetching real data; del
 src/app/goals/loading.tsx → goals page loading skeleton (header, list of GoalCardSkeletons)
 src/app/goals/new/page.tsx → stub (TODO: goal creation form; POST /api/goals, redirect to /goals/[id])
 src/app/goals/[id]/edit/page.tsx → stub (TODO: pre-populated edit form; PATCH /api/goals/[id]; mark completed/abandoned; delete)
-src/app/log/ → daily log; habit check-in toggles with strikethrough, notes textarea; fetches GET /api/coaching?limit=1 on mount for historical nudge; "Log Day" button calls POST /api/ai with { journal_entry } — shows Loader2 spinner + "Generating nudge…" while waiting, displays returned nudge in "Coach's Note" card on success, shows error in text-destructive below button on failure
+src/app/log/ → daily log; habit check-in toggles with strikethrough, notes textarea; fetches GET /api/coaching?limit=1 on mount for historical nudge; "Log Day" button POSTs to /api/ai with { journal_entry } — streams response via fetch + ReadableStream reader; each chunk is committed with flushSync() + requestAnimationFrame() to force per-chunk renders; shows Loader2 + "Generating nudge…" while streaming; shows error in text-destructive on failure
 src/app/settings/ → settings page; Profile save disabled (Supabase not yet wired); Coaching Style auto-saves to MongoDB on click; Notifications saves to MongoDB on button click; preferences loaded from GET /api/preferences on mount
 src/app/(auth)/login/page.tsx → login form (email + password); useActionState → signIn server action; links to /signup
 src/app/(auth)/signup/page.tsx → sign-up form (email + password + confirm password); useActionState → signUp server action; links to /login
@@ -38,7 +40,7 @@ src/app/api/goals/route.ts → POST /api/goals (auth-gated: 401 if no session; c
 src/app/api/checkins/route.ts → POST /api/checkins (auth-gated: 401 if no session; upserts checkin by habit_id + date for session user; on completed=true fires a fire-and-forget placeholder daily_nudge write to MongoDB via saveCoachingResponse() — MongoDB failure never breaks the checkin response; real Claude call replaces placeholder in Phase 5)
 src/app/api/preferences/route.ts → GET /api/preferences (returns MongoDB user preferences, falls back to schema defaults); PATCH /api/preferences (upserts coaching_style and/or notification_time; validates each field)
 src/app/api/coaching/route.ts → GET /api/coaching (returns coaching history from MongoDB via getCoachingHistory(); accepts optional ?limit=N param, default 20, clamped 1–100); POST /api/coaching (saves a new coaching response via saveCoachingResponse(); body: { type, content, model, habit_context? }; validates type enum + required fields; returns 201)
-src/app/api/ai/route.ts → POST /api/ai (auth-gated; fetches habits + today's checkins (Supabase) + user preferences (MongoDB) in parallel; loads daily-coaching-nudge prompt via loadPrompt(); calls Anthropic SDK (model from YAML); saves result to MongoDB via saveCoachingResponse(); returns { nudge: string }; @anthropic-ai/sdk installed)
+src/app/api/ai/route.ts → POST /api/ai (auth-gated; fetches habits + today's checkins (Supabase) + user preferences (MongoDB) in parallel; loads daily-coaching-nudge prompt via loadPrompt(); streams response via Vercel AI SDK v6 streamText() + @ai-sdk/anthropic provider; onFinish callback saves completed nudge to MongoDB via saveCoachingResponse(); returns toTextStreamResponse() — text/plain streaming response)
 src/app/api/health/route.ts → GET /api/health (checks Supabase + MongoDB connectivity in parallel; returns { supabase, mongodb, timestamp } with 200 if all ok, 503 if any fail)
 src/components/ui/ → shadcn/ui (don't edit)
 src/components/app/ → app components (see below)
@@ -110,6 +112,15 @@ tests/ → Playwright tests
 - Auth logic ONLY in src/lib/auth/
 - Supabase = relational data | MongoDB = AI/flexible data
 - To call a server action from a Client Component, use `<form action={serverAction}>` — do NOT wrap in useCallback or call imperatively unless you need useActionState for error feedback
+
+## Vercel AI SDK v6 Notes
+- `streamText()` + `@ai-sdk/anthropic` provider is the correct pattern for streaming Claude responses in API routes
+- Return `result.toTextStreamResponse()` — sends `text/plain` chunked response
+- `onFinish: ({ text }) => ...` callback fires after the stream completes — use for fire-and-forget side effects (e.g. MongoDB save)
+- `maxOutputTokens` is the correct param (NOT `maxTokens` — renamed in v6)
+- `useCompletion` is NOT exported from `ai` v6 (only `UseCompletionOptions` type exists). Client-side streaming: use native `fetch` + `res.body.getReader()` + `TextDecoder` to accumulate chunks
+- `ai/react` subpath does NOT exist in v6 — `ERR_PACKAGE_PATH_NOT_EXPORTED`
+- React 18 automatic batching defers paints even across `await` boundaries — use `flushSync(() => setState(...))` + `await new Promise(resolve => requestAnimationFrame(resolve))` after each chunk to force per-chunk commits and browser paints
 
 ## Data Layer Conventions
 - Client Components → fetch API route → lib/db/
