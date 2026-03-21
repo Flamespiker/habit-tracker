@@ -5,7 +5,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Check, Sparkles } from "lucide-react"
+import { Check, Loader2, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,6 +41,9 @@ export default function LogPage() {
   const [habits, setHabits] = useState<Habit[]>(mockHabits)
   const [notes, setNotes] = useState("")
   const [latestNudge, setLatestNudge] = useState<IAiCoaching | null>(null)
+  const [freshNudge, setFreshNudge] = useState<string | null>(null)
+  const [isLogging, setIsLogging] = useState(false)
+  const [logError, setLogError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/coaching?limit=1")
@@ -61,6 +64,25 @@ export default function LogPage() {
     )
   }
 
+  const logDay = async () => {
+    setIsLogging(true)
+    setLogError(null)
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ journal_entry: notes }),
+      })
+      const data = await res.json() as { nudge?: string; error?: string }
+      if (!res.ok) throw new Error(data.error ?? "Failed to generate nudge")
+      setFreshNudge(data.nudge ?? null)
+    } catch (err) {
+      setLogError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setIsLogging(false)
+    }
+  }
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-8">
@@ -68,21 +90,30 @@ export default function LogPage() {
         <p className="mt-1 text-sm text-muted-foreground">{formatToday()}</p>
       </div>
 
-      {/* Coaching nudge — shown when a previous AI nudge exists */}
-      {latestNudge && (
+      {/* Coaching nudge — loading, fresh result, or most recent historical nudge */}
+      {(isLogging || freshNudge || latestNudge) && (
         <Card className="mb-6 border-border bg-card">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Sparkles className="h-4 w-4 text-primary" />
+              {isLogging
+                ? <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                : <Sparkles className="h-4 w-4 text-primary" />
+              }
               Coach&apos;s Note
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {typeof latestNudge.content === "string"
-                ? latestNudge.content
-                : JSON.stringify(latestNudge.content)}
-            </p>
+            {isLogging ? (
+              <p className="text-sm text-muted-foreground">Generating your coaching nudge…</p>
+            ) : freshNudge ? (
+              <p className="text-sm text-muted-foreground">{freshNudge}</p>
+            ) : latestNudge ? (
+              <p className="text-sm text-muted-foreground">
+                {typeof latestNudge.content === "string"
+                  ? latestNudge.content
+                  : JSON.stringify(latestNudge.content)}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       )}
@@ -154,13 +185,19 @@ export default function LogPage() {
         </CardContent>
       </Card>
 
-      {/* Submit — disabled until Stage 3 */}
-      <Button className="w-full" disabled>
-        Log Day
+      <Button className="w-full" onClick={logDay} disabled={isLogging}>
+        {isLogging ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Generating nudge…
+          </>
+        ) : (
+          "Log Day"
+        )}
       </Button>
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        Saving will be enabled once the backend is connected.
-      </p>
+      {logError && (
+        <p className="mt-2 text-center text-xs text-destructive">{logError}</p>
+      )}
     </main>
   )
 }
