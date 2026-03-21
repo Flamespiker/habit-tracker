@@ -20,7 +20,7 @@ badge, button, card, dialog, dropdown-menu, input, label, progress, skeleton, so
 
 ## Folder Structure
 src/app/ → Next.js pages and API routes
-src/app/layout.tsx → root layout — async Server Component; fetches session user via createClient() + getUser(), passes userEmail to Navigation
+src/app/layout.tsx → root layout — async Server Component; fetches session user via createClient() + getUser(), passes userEmail to Navigation and isAuthenticated={!!user} to SupportChat
 src/app/page.tsx → dashboard (route: /) — async Server Component; fetches habits + checkins (Supabase) and coaching history (MongoDB) in parallel via Promise.all; passes habits to HabitDashboard and 3 most recent coaching entries to DashboardCoachingPanel
 src/app/loading.tsx → dashboard loading skeleton (stats cards, habit card grid, chart column)
 src/app/habits/ → habits list — async Server Component fetching real data; delegates toggle state to HabitsClient + /[id]/page.tsx implemented (detail: metadata, streak, weekly grid; fetches real data via getHabitById + getCheckins in parallel; notFound() if habit missing or wrong user)
@@ -42,10 +42,12 @@ src/app/api/preferences/route.ts → GET /api/preferences (returns MongoDB user 
 src/app/api/coaching/route.ts → GET /api/coaching (returns coaching history from MongoDB via getCoachingHistory(); accepts optional ?limit=N param, default 20, clamped 1–100); POST /api/coaching (saves a new coaching response via saveCoachingResponse(); body: { type, content, model, habit_context? }; validates type enum + required fields; returns 201)
 src/app/api/ai/route.ts → POST /api/ai (auth-gated; fetches habits + today's checkins (Supabase) + user preferences (MongoDB) in parallel; loads daily-coaching-nudge prompt via loadPrompt(); streams response via Vercel AI SDK v6 streamText() + @ai-sdk/anthropic provider; onFinish callback saves completed nudge to MongoDB via saveCoachingResponse(); returns toTextStreamResponse() — text/plain streaming response)
 src/app/api/weekly-summary/route.ts → POST /api/weekly-summary (auth-gated: 401 if no session; calls runWeeklySummaryAgent(user.id); returns { summary } with 201 on success, 500 on error)
+src/app/api/support/route.ts → POST /api/support (auth-gated: 401 if no session; body: { question: string }; 400 if question missing/empty; calls runSupportAgent(user.id, question); returns { answer } 200 on success, 500 on error)
 src/app/api/health/route.ts → GET /api/health (checks Supabase + MongoDB connectivity in parallel; returns { supabase, mongodb, timestamp } with 200 if all ok, 503 if any fail)
 src/components/ui/ → shadcn/ui (don't edit)
 src/components/app/ → app components (see below)
 src/components/app/Navigation.tsx → sticky site-wide nav bar; accepts `userEmail: string | null` prop from layout; shows truncated email + sign-out button (desktop: after ThemeToggle; mobile: bottom of dropdown); sign-out calls the `signOut` server action via `<form action={signOut}>`
+src/components/app/support-chat.tsx → floating support chat widget; fixed bottom-right z-50; accepts `isAuthenticated: boolean` — renders null when false (hidden on login/signup); opens/closes a w-80 chat panel; maintains Message[] conversation history (question + answer + loading per entry); POSTs to /api/support, displays plain-text answers as chat bubbles (user right/primary, agent left/muted); auto-scrolls to latest message via messagesEndRef
 src/components/app/theme-provider.tsx → next-themes provider (used in root layout)
 src/components/app/theme-toggle.tsx → light/dark/system dropdown toggle
 src/components/app/habit-dashboard.tsx → main dashboard (stats, habit list, weekly chart, coaching nudge); accepts initialHabits: Habit[] prop from page.tsx; computes weeklyData (Mon–Sun of current UTC week mapped from habits' rolling weekly_data) and todayIndex (0=Mon…6=Sun) passed to WeeklyChart; "Get nudge" button POSTs to /api/ai and streams the text/plain response inline using flushSync + requestAnimationFrame pattern
@@ -73,6 +75,7 @@ src/lib/db/mongo/ai-coaching.ts → getCoachingHistory(userId, limit?), saveCoac
 src/lib/db/mongo/user-preferences.ts → getUserPreferences(userId), saveUserPreferences(userId, prefs) — upserts on user_id
 src/lib/ai/prompts.ts → loadPrompt(name, variables): reads a YAML file from .claude/prompts/, parses it, interpolates {{variable}} placeholders, returns { model, system, user }
 src/lib/ai/weekly-summary-agent.ts → LangGraph ReAct agent; exported runWeeklySummaryAgent(userId): calls readHabitData tool (getHabits + getCheckinsForPeriod, 7 days) and readCoachingHistory tool (getCoachingHistory, limit 7) in parallel via agent graph, generates structured WeeklySummaryContent JSON, saves to MongoDB as type: 'weekly_summary' via saveCoachingResponse(); must be called from a server-side context (uses next/headers via Supabase createClient)
+src/lib/ai/support-agent.ts → LangGraph ReAct agent; exported runSupportAgent(userId, question): three tools — getAppHelp(topic) returns static help text for habits/goals/checkins/streaks/log/coaching/settings, getUserHabits fetches user's habits + 7-day checkins from Supabase, getCoachingHistory fetches 5 most recent coaching entries from MongoDB; agent selectively calls tools based on the question; returns plain text answer string; must be called server-side
 .claude/prompts/ → YAML prompt files: daily-coaching-nudge.yaml, weekly-summary.yaml, habit-suggestion.yaml, goal-adjustment.yaml — each has name, description, version, model, system, and user_template fields
 src/lib/auth/actions.ts → Server Actions: signIn(prevState, formData), signUp(prevState, formData), signOut(); all use createClient() from server.ts
 src/proxy.ts → Next.js 15 proxy convention (replaces middleware.ts); refreshes Supabase session on every request; redirects unauthenticated users to /login; redirects authenticated users away from /login and /signup
