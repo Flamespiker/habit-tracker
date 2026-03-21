@@ -1,6 +1,6 @@
  Product Requirements Document — Habit & Goal Tracker
 
-  Last updated: 2026-03-18 | Status: In development | Owner: Personal / solo use
+  Last updated: 2026-03-20 | Status: In development | Owner: Personal / solo use
 
   ---
   Problem Statement
@@ -56,14 +56,16 @@
 
   - Checklist of today's habits — mark complete / incomplete
   - Mood score input + free-text journal entry
+  - Displays most recent coaching nudge ("Coach's Note" card) fetched from GET /api/coaching on page load
   - On submit: POST /api/log → triggers AI insight generation via /api/ai
   - Route: /log
 
   4. AI Coaching
 
   - Insights stored in MongoDB (flexible schema)
-  - Generated per log entry; surfaced on goal detail pages
-  - Powered by Claude API (inferred from stack)
+  - Retrieved via GET /api/coaching; saved via POST /api/coaching
+  - Generated per log entry (via /api/ai — planned); surfaced on daily log and goal detail pages
+  - Powered by Claude API
 
   5. Auth
 
@@ -279,11 +281,13 @@ All routes require an authenticated session. User ID is always read server-side 
 | `GET` | `/api/log` | Get today's `daily_log` and all `checkins` for the current user | Supabase |
 | `POST` | `/api/log` | Upsert today's `daily_log` (mood, journal) and batch-upsert `checkins` | Supabase |
 
-### AI
+### AI Coaching
 
 | Method | Path | What it does | DB |
 |---|---|---|---|
-| `POST` | `/api/ai` | Generate a coaching insight from today's log; store result in `ai_coaching` | MongoDB (write), Supabase (read log data) |
+| `GET` | `/api/coaching` ✅ | Fetch coaching history for the current user; accepts optional `?limit=N` (default 20, max 100) | MongoDB |
+| `POST` | `/api/coaching` ✅ | Save a coaching response; body: `{ type, content, model, habit_context? }`; validates type enum; returns 201 | MongoDB |
+| `POST` | `/api/ai` | Generate a coaching insight from today's log via Claude API; store result via `/api/coaching` | MongoDB (write), Supabase (read log data) |
 | `GET` | `/api/ai/[goalId]` | Fetch past AI insights for a specific goal | MongoDB |
 
 ### Preferences
@@ -316,7 +320,7 @@ Each stage ends with something fully usable — not just wired up, but shippable
 | **1 — Scaffold & Deploy** | 1–2 | Next.js project, Vercel deploy, GitHub repo, CI skeleton, page routes scaffolded | A live URL exists. Every page loads (even if blank). You can push code and see it deploy. |
 | **2 — UI with mock data** ✅ | 3–4 | Habit dashboard, HabitCard, check-in toggle, streak display, habit detail page, goal list + detail, NewHabitDialog, NewGoalDialog, daily log, settings, site-wide Navigation, loading skeletons — all with mock data. Remaining: auth pages only. | The full app is navigable and looks real. You can demo the UI without a backend. |
 | **3 — Supabase backend** (in progress) | 5–6 | Postgres schema ✅, Supabase client ✅, generated DB types ✅, habits/goals/checkins query functions ✅, POST /api/habits ✅, POST /api/goals ✅ (incl. goal_habits), POST /api/checkins ✅ (upsert by habit_id+date), dashboard + habits + goals pages fetch real data ✅, check-in toggle persists to Supabase ✅, completed_today derived from real checkins ✅, email/password auth (login + signup pages + Server Actions) ✅, proxy.ts route protection ✅, all routes use authenticated server client + session user ID ✅, sign-out button + email indicator in Navigation ✅, streak + weekly_data derived from checkins in toHabit() ✅, weekly chart shows correct Mon–Sun week with today highlighted ✅ — remaining: RLS policies | You can sign up, log in, create habits and goals, and check in — data persists. The core loop works end-to-end. |
-| **4 — MongoDB + dual DB** | 7–8 | MongoDB Atlas cluster ✅, Mongoose models (`AiCoaching`, `UserPreferences`) ✅, query functions (`ai-coaching.ts`, `user-preferences.ts`) ✅, `GET /api/preferences` + `PATCH /api/preferences` ✅, settings page wired (coaching style + notification time persist) ✅, prompt library (`src/lib/ai/prompts.ts` + `.claude/prompts/`) ✅ — remaining: `/api/ai` | Settings (theme, notifications) persist. The app reads/writes both databases. The AI data layer is ready to receive responses. |
+| **4 — MongoDB + dual DB** | 7–8 | MongoDB Atlas cluster ✅, Mongoose models (`AiCoaching`, `UserPreferences`) ✅, query functions (`ai-coaching.ts`, `user-preferences.ts`) ✅, `GET /api/preferences` + `PATCH /api/preferences` ✅, settings page wired (coaching style + notification time persist) ✅, prompt library (`src/lib/ai/prompts.ts` + `.claude/prompts/`) ✅, `GET /api/coaching` + `POST /api/coaching` ✅, daily log displays most recent coaching nudge ✅ — remaining: `/api/ai` (Claude API call) | Settings (theme, notifications) persist. The app reads/writes both databases. Coaching history is stored and retrieved. The AI data layer is ready to generate and surface responses. |
 | **5 — AI coaching** | 9–10 | Claude API integration, streaming coaching nudge on daily log submit, coaching history display, weekly LangChain summary agent | After checking in, you get a real AI coaching message. Past insights are visible on goal detail pages. The app is genuinely useful. |
 | **6 — Tests & CI/CD** | 11–12 | Playwright test suite (login, habit creation, check-in, goal creation), GitHub Actions pipeline, Claude PR review agent | Every push runs tests automatically. PRs get AI review. Broken builds are caught before merge. |
 | **7 — Automation** | 13–14 | n8n local workflows, daily 8am cron → fetch habits → call Claude → save nudge to MongoDB, LangGraph weekly summary agent | The app coaches you without you opening it. Daily nudges and weekly summaries arrive automatically. |
