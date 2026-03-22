@@ -16,8 +16,8 @@ runtimes:
 
 lint:
   enabled:
-    - eslint@9.17.0
-    - prettier@3.4.2
+    - eslint
+    - prettier
     - checkov@3.2.334
     - trivy@0.58.1
 
