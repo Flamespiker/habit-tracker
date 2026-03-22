@@ -78,7 +78,7 @@ src/lib/ai/weekly-summary-agent.ts → LangGraph ReAct agent; exported runWeekly
 src/lib/ai/support-agent.ts → LangGraph ReAct agent; exported runSupportAgent(userId, question): three tools — getAppHelp(topic) returns static help text for habits/goals/checkins/streaks/log/coaching/settings, getUserHabits fetches user's habits + 7-day checkins from Supabase, getCoachingHistory fetches 5 most recent coaching entries from MongoDB; agent selectively calls tools based on the question; returns plain text answer string; must be called server-side
 .claude/prompts/ → YAML prompt files: daily-coaching-nudge.yaml, weekly-summary.yaml, habit-suggestion.yaml, goal-adjustment.yaml — each has name, description, version, model, system, and user_template fields
 src/lib/auth/actions.ts → Server Actions: signIn(prevState, formData), signUp(prevState, formData), signOut(); all use createClient() from server.ts
-src/proxy.ts → Next.js 15 proxy convention (replaces middleware.ts); refreshes Supabase session on every request; redirects unauthenticated users to /login; redirects authenticated users away from /login and /signup
+src/middleware.ts → Next.js middleware; refreshes Supabase session on every request (keeps auth tokens alive); redirects unauthenticated users to /login; redirects authenticated users away from /login and /signup
 tests/ → Playwright tests
 .github/workflows/ → CI/CD pipelines
 
@@ -141,6 +141,14 @@ List pages with a creation dialog always split into two files:
 2. `src/components/app/[domain]/XxxClient.tsx` — Client Component; holds `useState`, passes `onAdd={(item) => setItems(prev => [...prev, item])}` to the dialog
 This is required because `async` server fetching and `useState` cannot coexist in one file.
 Current examples: HabitsClient, GoalsClient, HabitDashboard (initialHabits prop), LogClient (initialHabits prop).
+
+## Playwright E2E Notes
+- Config: `playwright.config.ts` — 60s timeout per test, 1 worker (serial), chromium only, baseURL `http://localhost:3000`
+- Helpers: `tests/e2e/helpers/login.ts` — logs in via UI using `TEST_EMAIL` + `TEST_PASSWORD` from `.env.local`; waits for `waitForURL('/')`
+- **Streaming SSR + loading skeletons**: `page.goto(url)` fires `load` before streamed SSR content arrives. Always wait for a landmark element (e.g. `expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible()`) before interacting — `waitForLoadState('networkidle')` alone is insufficient because skeleton `<div>`s have no network requests
+- **Navigation tests**: always use `page.waitForURL(url)` (actively waits for URL change, uses 60s test timeout) instead of `expect(page).toHaveURL(...)` (only retries for 5s assertion timeout — too short for Supabase auth redirects and SSR pages). Use `toHaveURL` only when asserting the page is NOT navigating away (e.g. invalid credentials staying on /login)
+- **After dialog close + Server Component list**: `waitForLoadState('networkidle')` then `page.reload()` then `waitForLoadState('networkidle')` before asserting new items — Server Component lists require a full reload to re-fetch from DB
+- **Skip conditions**: `page.getByRole('link').filter({ hasText: /./i }).count()` matches nav links too — use specific selectors (`a[href^="/goals/"]`) with `isVisible()` for meaningful skip checks
 
 ## Commands
 npm run dev → dev server
