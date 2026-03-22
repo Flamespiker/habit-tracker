@@ -16,7 +16,7 @@ runtimes:
 
 lint:
   enabled:
-    - eslint
+    - eslint@9.39.4
     - prettier
     - checkov@3.2.334
 
@@ -26,6 +26,11 @@ lint:
         - node_modules/**
         - .next/**
         - out/**
+    - linters: [prettier]
+      paths:
+        - .claude/**
+        - src/scripts/**
+        - src/lib/types/**
 
 actions:
   enabled:
