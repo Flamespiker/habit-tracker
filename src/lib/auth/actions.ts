@@ -19,8 +19,12 @@ export async function signIn(
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.log('[signIn] auth error:', error.message, error.status, error.name)
+    return { error: error.message }
+  }
 
+  console.log('[signIn] auth success, redirecting to /')
   redirect('/')
 }
 
