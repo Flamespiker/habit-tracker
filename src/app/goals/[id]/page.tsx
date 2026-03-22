@@ -1,13 +1,14 @@
-// TODO: Replace mockGoals/mockHabits with direct src/lib/db/supabase/ calls once Stage 3 is built.
-
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { ArrowLeft, CalendarDays } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { mockGoals, mockHabits } from "@/lib/mock-data"
+import { createClient } from "@/lib/db/supabase/server"
+import { getGoalById, getGoalHabitIds } from "@/lib/db/supabase/goals"
+import { getHabits, toHabit } from "@/lib/db/supabase/habits"
+import { getCheckinsForPeriod } from "@/lib/db/supabase/checkins"
 import { GoalStatus, categoryColors, categoryLabels } from "@/lib/types"
 
 interface GoalDetailPageProps {
@@ -32,19 +33,41 @@ function formatDate(dateStr: string | null): string {
 
 /**
  * Detail page for a single goal.
- * Displays goal title, status badge, target date, description, and linked habits.
- * Server Component — reads directly from mock data (will read from lib/db/supabase/ in Stage 3).
+ * Fetches the goal, its linked habit IDs, and those habits with recent checkins from Supabase.
  */
 export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
   const { id } = await params
-  const goal = mockGoals.find((g) => g.id === id)
 
-  if (!goal) notFound()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  const style = statusStyles[goal.status]
-  const linkedHabits = goal.habit_ids
-    .map((hid) => mockHabits.find((h) => h.id === hid))
-    .filter((h): h is NonNullable<typeof h> => h !== undefined)
+  const now = new Date()
+  const today = now.toISOString().split('T')[0]
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+  const [goalRow, habitIds] = await Promise.all([
+    getGoalById(user.id, id, supabase),
+    getGoalHabitIds(id, supabase),
+  ])
+
+  if (!goalRow) notFound()
+
+  // Only fetch habits and checkins if there are linked habits
+  const linkedHabits = habitIds.length > 0
+    ? await (async () => {
+        const [habitRows, checkins] = await Promise.all([
+          getHabits(user.id, supabase),
+          getCheckinsForPeriod(user.id, sevenDaysAgo, today, supabase),
+        ])
+        const habits = habitRows.map((row) => toHabit(row, checkins))
+        return habitIds
+          .map((hid) => habits.find((h) => h.id === hid))
+          .filter((h): h is NonNullable<typeof h> => h !== undefined)
+      })()
+    : []
+
+  const style = statusStyles[goalRow.status as GoalStatus]
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
@@ -62,11 +85,8 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
           {style.label}
         </Badge>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {goal.title}
+          {goalRow.title}
         </h1>
-        {goal.description && (
-          <p className="mt-2 text-sm text-muted-foreground">{goal.description}</p>
-        )}
       </div>
 
       {/* Target date */}
@@ -75,7 +95,7 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
           <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
           <div>
             <p className="text-xs text-muted-foreground">Target date</p>
-            <p className="text-sm font-medium text-foreground">{formatDate(goal.target_date)}</p>
+            <p className="text-sm font-medium text-foreground">{formatDate(goalRow.target_date)}</p>
           </div>
         </CardContent>
       </Card>

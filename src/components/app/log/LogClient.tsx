@@ -83,12 +83,29 @@ export default function LogClient({ initialHabits }: Props) {
 
   const completedCount = habits.filter((h) => h.completed_today).length
 
-  const toggleHabit = (id: string) => {
+  const toggleHabit = async (id: string) => {
+    const habit = habits.find((h) => h.id === id)
+    if (!habit) return
+    const newCompleted = !habit.completed_today
+
+    // Optimistic update — UI responds immediately
     setHabits((prev) =>
       prev.map((h) =>
-        h.id === id ? { ...h, completed_today: !h.completed_today } : h
+        h.id === id ? { ...h, completed_today: newCompleted } : h
       )
     )
+
+    // Persist to Supabase
+    const today = new Date().toISOString().split('T')[0]
+    try {
+      await fetch('/api/checkins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habit_id: id, date: today, completed: newCompleted }),
+      })
+    } catch (err) {
+      console.error('[toggleHabit]', err)
+    }
   }
 
   const logDay = async () => {

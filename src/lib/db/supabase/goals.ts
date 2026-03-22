@@ -82,6 +82,41 @@ export async function createGoalHabits(
 }
 
 /**
+ * Fetches a single goal by ID, scoped to the given user.
+ * Returns null if no matching row exists or the goal belongs to a different user.
+ */
+export async function getGoalById(userId: string, goalId: string, client?: Client): Promise<GoalRow | null> {
+  const supabase = client ?? await createClient()
+  const { data, error } = await supabase
+    .from('goals')
+    .select('*')
+    .eq('id', goalId)
+    .eq('user_id', userId)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null // no rows found
+    throw error
+  }
+  return data
+}
+
+/**
+ * Fetches the habit IDs linked to a goal via the goal_habits join table.
+ * Returns an empty array if the goal has no linked habits.
+ */
+export async function getGoalHabitIds(goalId: string, client?: Client): Promise<string[]> {
+  const supabase = client ?? await createClient()
+  const { data, error } = await supabase
+    .from('goal_habits')
+    .select('habit_id')
+    .eq('goal_id', goalId)
+
+  if (error) throw error
+  return data.map((row) => row.habit_id)
+}
+
+/**
  * Updates fields on an existing goal and returns the updated row.
  * Pass `client` to override the default server client.
  */
