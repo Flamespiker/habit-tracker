@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Loading skeleton that matches the shape of HabitCard:
@@ -33,7 +33,7 @@ export function HabitCardSkeleton() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default HabitCardSkeleton
+export default HabitCardSkeleton;

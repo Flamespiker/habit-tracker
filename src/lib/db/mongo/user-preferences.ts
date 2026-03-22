@@ -1,12 +1,14 @@
-import { connectToMongoDB } from './client'
-import UserPreferences, { IUserPreferences } from './models/UserPreferences'
+import { connectToMongoDB } from "./client";
+import UserPreferences, { IUserPreferences } from "./models/UserPreferences";
 
 /**
  * Fetches preferences for a user. Returns null if no preferences have been saved yet.
  */
-export async function getUserPreferences(userId: string): Promise<IUserPreferences | null> {
-  await connectToMongoDB()
-  return UserPreferences.findOne({ user_id: userId }).lean<IUserPreferences>()
+export async function getUserPreferences(
+  userId: string,
+): Promise<IUserPreferences | null> {
+  await connectToMongoDB();
+  return UserPreferences.findOne({ user_id: userId }).lean<IUserPreferences>();
 }
 
 /**
@@ -16,14 +18,14 @@ export async function getUserPreferences(userId: string): Promise<IUserPreferenc
  */
 export async function saveUserPreferences(
   userId: string,
-  prefs: Partial<Omit<IUserPreferences, 'user_id'>>
+  prefs: Partial<Omit<IUserPreferences, "user_id">>,
 ): Promise<IUserPreferences> {
-  await connectToMongoDB()
+  await connectToMongoDB();
   const doc = await UserPreferences.findOneAndUpdate(
     { user_id: userId },
     { $set: prefs },
-    { upsert: true, new: true }
-  ).lean<IUserPreferences>()
+    { upsert: true, new: true },
+  ).lean<IUserPreferences>();
   // upsert: true guarantees a document is returned
-  return doc!
+  return doc!;
 }

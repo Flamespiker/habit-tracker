@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Loading skeleton that matches the shape of a goal row on the goals list page:
@@ -26,7 +26,7 @@ export function GoalCardSkeleton() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default GoalCardSkeleton
+export default GoalCardSkeleton;

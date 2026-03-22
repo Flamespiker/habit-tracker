@@ -3,6 +3,7 @@
 Personal hobby app. Not commercial. Only user is me.
 
 ## Stack
+
 - Next.js 15 (App Router, TypeScript)
 - React 19
 - Tailwind CSS + shadcn/ui
@@ -16,9 +17,11 @@ Personal hobby app. Not commercial. Only user is me.
 - `@anthropic-ai/sdk` — installed but superseded by `@ai-sdk/anthropic` for the `/api/ai` route
 
 ## shadcn/ui Components (installed)
+
 badge, button, card, dialog, dropdown-menu, input, label, progress, skeleton, sonner, table
 
 ## Folder Structure
+
 src/app/ → Next.js pages and API routes
 src/app/layout.tsx → root layout — async Server Component; fetches session user via createClient() + getUser(), passes userEmail to Navigation and isAuthenticated={!!user} to SupportChat
 src/app/page.tsx → dashboard (route: /) — async Server Component; fetches habits + checkins (Supabase) and coaching history (MongoDB) in parallel via Promise.all; passes habits to HabitDashboard and 3 most recent coaching entries to DashboardCoachingPanel
@@ -66,7 +69,7 @@ src/components/app/log/LogClient.tsx → Client Component; receives initialHabit
 src/lib/types/ → shared TypeScript types (Habit, Category, categoryColors, categoryLabels, Goal, GoalStatus) + database.types.ts (Supabase-generated; Tables<T>, TablesInsert<T>, TablesUpdate<T>)
 src/lib/mock-data.ts → mock habits + goals for Stage 2 UI (replace with API calls in Stage 3)
 src/lib/data.ts → re-export shim for mock-data.ts (backward compat)
-src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR), admin.ts (service role — bypasses RLS; only used by health check, not app routes), habits.ts (getHabits, getHabitById, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, getGoalById, createGoal, updateGoal, createGoalHabits, getGoalHabitIds, toGoal), checkins.ts (getTodayCheckins, getCheckins, createCheckin, upsertCheckin, getCheckinsForPeriod, updateCheckin)
+src/lib/db/supabase/ → Supabase query functions: client.ts (browser), server.ts (SSR — `createClient()` wraps all fetch calls with a 30s AbortController timeout so auth Server Actions fail fast in CI instead of hanging until the Playwright test timeout), admin.ts (service role — bypasses RLS; only used by health check, not app routes), habits.ts (getHabits, getHabitById, createHabit, updateHabit, deleteHabit, toHabit), goals.ts (getGoals, getGoalById, createGoal, updateGoal, createGoalHabits, getGoalHabitIds, toGoal), checkins.ts (getTodayCheckins, getCheckins, createCheckin, upsertCheckin, getCheckinsForPeriod, updateCheckin)
 supabase/migrations/20260320000000_add_rls_policies.sql → enables RLS on habits, goals, checkins, goal_habits; adds SELECT/INSERT/UPDATE/DELETE policies scoped to auth.uid() = user_id for habits/goals/checkins; goal_habits policies check ownership via goal_id IN (SELECT id FROM goals WHERE user_id = auth.uid()); apply via Supabase SQL editor or supabase db push
 src/lib/db/mongo/client.ts → cached Mongoose connection via `connectToMongoDB()`; caches on `global._mongooseCache` so the connection survives Next.js hot reloads and is reused across serverless invocations; reads MONGODB_URI env var
 src/lib/db/mongo/models/AiCoaching.ts → Mongoose model for `ai_coaching` collection; fields: user_id, type (daily_nudge|weekly_summary|suggestion), habit_context (Mixed), content (Mixed), created_at, model
@@ -83,14 +86,17 @@ tests/ → Playwright tests
 .github/workflows/ → CI/CD pipelines
 
 ## Skills
+
 /habit-component <ComponentName> → scaffold a new component in src/components/app/habits/
 
 ## Theming
+
 - ThemeProvider wraps the app in src/app/layout.tsx with `attribute="class"`, `defaultTheme="dark"`, `enableSystem`
 - `<html>` has `suppressHydrationWarning` to prevent next-themes hydration mismatch
 - Components using `useTheme()` must be 'use client' and guard with a `mounted` state before rendering theme-dependent UI
 
 ## Habit Type Notes
+
 - `completed_today`, `weekly_data`, and `streak` on `Habit` are UI-only — not stored in the `habits` table; all three are derived in `toHabit(row, checkins)` from a flat `CheckinRecord[]` array.
 - `streak` = consecutive completed days counting back from today (UTC); if today is incomplete the count starts from yesterday so the streak isn't prematurely broken.
 - `weekly_data` = 7-element array, index 0 = 6 days ago, index 6 = today; 1 if completed, 0 if not. Dates computed in UTC — TODO: format to local timezone when displayed on the client.
@@ -100,12 +106,14 @@ tests/ → Playwright tests
 - `toggleHabit` pattern: optimistic state update first (UI responds immediately), then fire `POST /api/checkins`. Errors logged but don't revert — page refresh re-syncs from DB. Date is always UTC: `new Date().toISOString().split('T')[0]`
 
 ## Goal Type Notes
+
 - `GoalStatus` = `"active" | "completed" | "abandoned"` — "paused" is not a valid value
 - `habit_ids: string[]` on `Goal` is UI-only — not stored in the `goals` table; derived from the `goal_habits` join table
 - `habit_ids: []` means a standalone goal with no linked habits
 - `description` on `Goal` is not in the DB schema — `toGoal()` stubs it to `null`; `status` is `string` in DB, cast to `GoalStatus` in `toGoal()`
 
 ## Conventions
+
 - TypeScript strictly — no `any` types
 - Server Components by default — Client only when needed
 - When adding 'use client', put a comment on the line above explaining why
@@ -120,6 +128,7 @@ tests/ → Playwright tests
 - To call a server action from a Client Component, use `<form action={serverAction}>` — do NOT wrap in useCallback or call imperatively unless you need useActionState for error feedback
 
 ## Vercel AI SDK v6 Notes
+
 - `streamText()` + `@ai-sdk/anthropic` provider is the correct pattern for streaming Claude responses in API routes
 - Return `result.toTextStreamResponse()` — sends `text/plain` chunked response
 - `onFinish: ({ text }) => ...` callback fires after the stream completes — use for fire-and-forget side effects (e.g. MongoDB save)
@@ -129,6 +138,7 @@ tests/ → Playwright tests
 - React 18 automatic batching defers paints even across `await` boundaries — use `flushSync(() => setState(...))` + `await new Promise(resolve => requestAnimationFrame(resolve))` after each chunk to force per-chunk commits and browser paints
 
 ## Data Layer Conventions
+
 - Client Components → fetch API route → lib/db/
 - Server Components → call lib/db/ directly, using `createClient()` from server.ts
 - API routes: call `createClient()` → `supabase.auth.getUser()` → return 401 if no user → pass `supabase` to query functions
@@ -136,13 +146,16 @@ tests/ → Playwright tests
 - Query functions accept an optional `client` param — always pass the authenticated server client explicitly; falls back to a fresh server client when omitted
 
 ## Server/Client Split Pattern
+
 List pages with a creation dialog always split into two files:
+
 1. `src/app/[route]/page.tsx` — async Server Component; calls `createClient()` + `getUser()`, fetches data, renders `<XxxClient initialItems={...} />`
 2. `src/components/app/[domain]/XxxClient.tsx` — Client Component; holds `useState`, passes `onAdd={(item) => setItems(prev => [...prev, item])}` to the dialog
-This is required because `async` server fetching and `useState` cannot coexist in one file.
-Current examples: HabitsClient, GoalsClient, HabitDashboard (initialHabits prop), LogClient (initialHabits prop).
+   This is required because `async` server fetching and `useState` cannot coexist in one file.
+   Current examples: HabitsClient, GoalsClient, HabitDashboard (initialHabits prop), LogClient (initialHabits prop).
 
 ## Playwright E2E Notes
+
 - Config: `playwright.config.ts` — 120s timeout per test, 1 worker (serial), chromium only, baseURL `http://localhost:3000`; webServer: CI runs `npm run build && npm start` (300s startup), local reuses existing dev server
 - Helpers: `tests/e2e/helpers/login.ts` — logs in via UI; uses `TEST_EMAIL` + `TEST_PASSWORD` from `.env.local`; waits with `page.waitForURL('/', { waitUntil: 'commit', timeout: 60000 })`
 - **Post-auth navigation**: always use `page.waitForURL('/', { waitUntil: 'commit', timeout: 60000 })` — `commit` fires the moment the URL changes (not after full page load). The explicit `timeout: 60000` is required: without it Playwright inherits the 120s test timeout, leaving no room for `retries: 1` to kick in within the test budget
@@ -154,10 +167,10 @@ Current examples: HabitsClient, GoalsClient, HabitDashboard (initialHabits prop)
 - **Skip conditions**: `getByRole('link').filter({ hasText: /./i }).count()` matches nav links — use specific selectors (`a[href^="/goals/"]`) with `isVisible()` for meaningful skip checks
 
 ## Commands
+
 npm run dev → dev server
 npm run build → production build
 npx playwright test → E2E tests
 npx tsc --noEmit → type check
 
 ---
-

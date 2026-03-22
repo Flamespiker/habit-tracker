@@ -1,15 +1,18 @@
-import { tool } from '@langchain/core/tools'
-import { ChatAnthropic } from '@langchain/anthropic'
-import { createReactAgent } from '@langchain/langgraph/prebuilt'
-import { HumanMessage } from '@langchain/core/messages'
-import { z } from 'zod'
+import { tool } from "@langchain/core/tools";
+import { ChatAnthropic } from "@langchain/anthropic";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { HumanMessage } from "@langchain/core/messages";
+import { z } from "zod";
 
-import { getHabits, toHabit } from '@/lib/db/supabase/habits'
-import { getCheckinsForPeriod } from '@/lib/db/supabase/checkins'
-import { getCoachingHistory, saveCoachingResponse } from '@/lib/db/mongo/ai-coaching'
-import type { IAiCoaching } from '@/lib/db/mongo/models/AiCoaching'
+import { getHabits, toHabit } from "@/lib/db/supabase/habits";
+import { getCheckinsForPeriod } from "@/lib/db/supabase/checkins";
+import {
+  getCoachingHistory,
+  saveCoachingResponse,
+} from "@/lib/db/mongo/ai-coaching";
+import type { IAiCoaching } from "@/lib/db/mongo/models/AiCoaching";
 
-const MODEL_ID = 'claude-sonnet-4-6'
+const MODEL_ID = "claude-sonnet-4-6";
 
 // ---------------------------------------------------------------------------
 // Output type
@@ -18,13 +21,13 @@ const MODEL_ID = 'claude-sonnet-4-6'
 /** Structured content saved to MongoDB as type: 'weekly_summary'. */
 export interface WeeklySummaryContent {
   /** 2–3 sentence narrative of the week. */
-  overview: string
+  overview: string;
   /** Notable wins or streaks. */
-  highlights: string[]
+  highlights: string[];
   /** Areas where the user struggled. */
-  struggles: string[]
+  struggles: string[];
   /** One actionable focus for the coming week. */
-  recommendation: string
+  recommendation: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -39,12 +42,14 @@ export interface WeeklySummaryContent {
  * Must be called from a server-side context (API route or Server Component)
  * because the Supabase query functions rely on next/headers cookies.
  */
-export async function runWeeklySummaryAgent(userId: string): Promise<IAiCoaching> {
-  const now = new Date()
-  const today = now.toISOString().split('T')[0]
+export async function runWeeklySummaryAgent(
+  userId: string,
+): Promise<IAiCoaching> {
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     .toISOString()
-    .split('T')[0]
+    .split("T")[0];
 
   // -------------------------------------------------------------------------
   // Tools — close over userId and date range so they need no input args
@@ -55,8 +60,8 @@ export async function runWeeklySummaryAgent(userId: string): Promise<IAiCoaching
       const [habitRows, checkins] = await Promise.all([
         getHabits(userId),
         getCheckinsForPeriod(userId, sevenDaysAgo, today),
-      ])
-      const habits = habitRows.map((row) => toHabit(row, checkins))
+      ]);
+      const habits = habitRows.map((row) => toHabit(row, checkins));
       // Return only the fields the LLM needs; strip large internal arrays
       const summary = habits.map((h) => ({
         id: h.id,
@@ -66,41 +71,44 @@ export async function runWeeklySummaryAgent(userId: string): Promise<IAiCoaching
         completed_today: h.completed_today,
         // weekly_data: index 0 = 6 days ago, index 6 = today
         weekly_data: h.weekly_data,
-      }))
-      return JSON.stringify({ habits: summary, dateRange: { from: sevenDaysAgo, to: today } })
+      }));
+      return JSON.stringify({
+        habits: summary,
+        dateRange: { from: sevenDaysAgo, to: today },
+      });
     },
     {
-      name: 'readHabitData',
+      name: "readHabitData",
       description:
         "Fetches the user's habits and their check-in data for the past 7 days from Supabase. Returns habit names, categories, streaks, and daily completion arrays.",
       schema: z.object({}),
-    }
-  )
+    },
+  );
 
   const readCoachingHistory = tool(
     async (): Promise<string> => {
       // Up to 7 entries — roughly one daily nudge per day over the past week
-      const entries = await getCoachingHistory(userId, 7)
+      const entries = await getCoachingHistory(userId, 7);
       const relevant = entries.map((e) => ({
         type: e.type,
         content: e.content,
         created_at: e.created_at,
-      }))
-      return JSON.stringify(relevant)
+      }));
+      return JSON.stringify(relevant);
     },
     {
-      name: 'readCoachingHistory',
+      name: "readCoachingHistory",
       description:
         "Fetches the past week's coaching nudges for the user from MongoDB. Provides context on recent encouragement and themes the coach has raised.",
       schema: z.object({}),
-    }
-  )
+    },
+  );
 
   // -------------------------------------------------------------------------
   // LLM + agent graph
   // -------------------------------------------------------------------------
 
-  const llm = new ChatAnthropic({ model: MODEL_ID })
+  const llm = new ChatAnthropic({ model: MODEL_ID });
 
   const agent = createReactAgent({
     llm,
@@ -120,28 +128,28 @@ Steps:
 }
 
 Respond with ONLY the JSON object — no markdown fences, no extra commentary.`,
-  })
+  });
 
   // -------------------------------------------------------------------------
   // Invoke
   // -------------------------------------------------------------------------
 
   const result = await agent.invoke({
-    messages: [new HumanMessage('Generate my weekly habit summary.')],
-  })
+    messages: [new HumanMessage("Generate my weekly habit summary.")],
+  });
 
   // Extract the final assistant message
-  const lastMessage = result.messages.at(-1)
+  const lastMessage = result.messages.at(-1);
   const rawContent =
-    typeof lastMessage?.content === 'string'
+    typeof lastMessage?.content === "string"
       ? lastMessage.content
-      : JSON.stringify(lastMessage?.content)
+      : JSON.stringify(lastMessage?.content);
 
-  let summaryContent: WeeklySummaryContent
+  let summaryContent: WeeklySummaryContent;
   try {
-    summaryContent = JSON.parse(rawContent) as WeeklySummaryContent
+    summaryContent = JSON.parse(rawContent) as WeeklySummaryContent;
   } catch {
-    throw new Error(`Agent returned non-JSON content: ${rawContent}`)
+    throw new Error(`Agent returned non-JSON content: ${rawContent}`);
   }
 
   // -------------------------------------------------------------------------
@@ -150,9 +158,9 @@ Respond with ONLY the JSON object — no markdown fences, no extra commentary.`,
 
   return saveCoachingResponse({
     user_id: userId,
-    type: 'weekly_summary',
+    type: "weekly_summary",
     content: summaryContent,
     model: MODEL_ID,
     habit_context: { dateRange: { from: sevenDaysAgo, to: today } },
-  })
+  });
 }

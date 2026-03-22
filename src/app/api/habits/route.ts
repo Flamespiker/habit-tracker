@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
-import { createHabit, toHabit } from '@/lib/db/supabase/habits'
-import { createClient } from '@/lib/db/supabase/server'
+import { NextResponse } from "next/server";
+import { createHabit, toHabit } from "@/lib/db/supabase/habits";
+import { createClient } from "@/lib/db/supabase/server";
 
 /**
  * POST /api/habits
@@ -9,39 +9,45 @@ import { createClient } from '@/lib/db/supabase/server'
  */
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { name, category, frequency } = body
+    const body = await request.json();
+    const { name, category, frequency } = body;
 
-    if (!name || typeof name !== 'string') {
-      return NextResponse.json({ error: 'name is required' }, { status: 400 })
+    if (!name || typeof name !== "string") {
+      return NextResponse.json({ error: "name is required" }, { status: 400 });
     }
     if (!category || !frequency) {
       return NextResponse.json(
-        { error: 'category and frequency are required' },
-        { status: 400 }
-      )
+        { error: "category and frequency are required" },
+        { status: 400 },
+      );
     }
 
-    const row = await createHabit({
-      name: name.trim(),
-      category,
-      frequency,
-      user_id: user.id,
-      target_days: [],
-    }, supabase)
+    const row = await createHabit(
+      {
+        name: name.trim(),
+        category,
+        frequency,
+        user_id: user.id,
+        target_days: [],
+      },
+      supabase,
+    );
 
     // New habit has no checkins yet — pass [] so streak=0, weekly_data=[0×7]
-    return NextResponse.json({ habit: toHabit(row, []) }, { status: 201 })
+    return NextResponse.json({ habit: toHabit(row, []) }, { status: 201 });
   } catch (err) {
-    console.error('[POST /api/habits]', err)
-    const message = err instanceof Error ? err.message : 'Failed to create habit'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error("[POST /api/habits]", err);
+    const message =
+      err instanceof Error ? err.message : "Failed to create habit";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,22 +1,22 @@
 // Client Component — uses useActionState for inline form error feedback
-'use client'
+"use client";
 
-import { useActionState } from 'react'
-import Link from 'next/link'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { signIn, type AuthActionState } from '@/lib/auth/actions'
+import { useActionState } from "react";
+import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { signIn, type AuthActionState } from "@/lib/auth/actions";
 
 /**
  * Login page — email + password form backed by the signIn Server Action.
  * Server-side errors (wrong credentials, etc.) are displayed inline.
  */
 export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState<AuthActionState, FormData>(
-    signIn,
-    null
-  )
+  const [state, formAction, isPending] = useActionState<
+    AuthActionState,
+    FormData
+  >(signIn, null);
 
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
@@ -58,17 +58,20 @@ export default function LoginPage() {
           )}
 
           <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? 'Signing in…' : 'Sign in'}
+            {isPending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-foreground underline underline-offset-4">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className="text-foreground underline underline-offset-4"
+          >
             Sign up
           </Link>
         </p>
       </div>
     </main>
-  )
+  );
 }

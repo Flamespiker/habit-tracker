@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
-      - 'tests/**'
+      - "src/**"
+      - "tests/**"
 
 jobs:
   claude-review:
@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
       pull-requests: write
 
     steps:
@@ -24,7 +25,7 @@ jobs:
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          review_instructions: |
+          custom_instructions: |
             Review this pull request for the following, and be constructive — always explain why something matters and suggest a concrete fix:
 
             1. **TypeScript correctness** — flag any `any` types; suggest the correct type or `unknown` with a narrowing guard.

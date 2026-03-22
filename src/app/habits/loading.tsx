@@ -1,5 +1,5 @@
-import { Skeleton } from "@/components/ui/skeleton"
-import { HabitCardSkeleton } from "@/components/app/habits/HabitCardSkeleton"
+import { Skeleton } from "@/components/ui/skeleton";
+import { HabitCardSkeleton } from "@/components/app/habits/HabitCardSkeleton";
 
 /**
  * Habits page loading state. Mirrors the layout of HabitsPage:
@@ -23,5 +23,5 @@ export default function HabitsLoading() {
         ))}
       </div>
     </main>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-import { Goal, Habit } from "./types"
+import { Goal, Habit } from "./types";
 
-const MOCK_USER_ID = "00000000-0000-0000-0000-000000000001"
+const MOCK_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 /**
  * Mock habits for Stage 2 (UI with mock data).
@@ -67,7 +67,7 @@ export const mockHabits: Habit[] = [
     weekly_data: [0, 1, 1, 0, 1, 0, 0],
     created_at: "2026-02-03T07:00:00Z",
   },
-]
+];
 
 /**
  * Mock goals for Stage 2 (UI with mock data).
@@ -98,7 +98,8 @@ export const mockGoals: Goal[] = [
     id: "g3",
     user_id: MOCK_USER_ID,
     title: "Read 12 books this year",
-    description: "Finish one book per month by reading at least 30 minutes daily.",
+    description:
+      "Finish one book per month by reading at least 30 minutes daily.",
     target_date: "2026-12-31",
     status: "active",
     created_at: "2025-12-01T07:00:00Z",
@@ -114,4 +115,4 @@ export const mockGoals: Goal[] = [
     created_at: "2026-02-03T07:00:00Z",
     habit_ids: [], // standalone — no linked habits yet
   },
-]
+];

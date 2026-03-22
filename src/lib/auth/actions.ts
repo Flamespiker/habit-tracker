@@ -1,9 +1,9 @@
-'use server'
+"use server";
 
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/db/supabase/server'
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/db/supabase/server";
 
-export type AuthActionState = { error: string } | null
+export type AuthActionState = { error: string } | null;
 
 /**
  * Signs in an existing user with email and password.
@@ -11,17 +11,17 @@ export type AuthActionState = { error: string } | null
  */
 export async function signIn(
   _prevState: AuthActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AuthActionState> {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
-  const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) return { error: error.message }
+  if (error) return { error: error.message };
 
-  redirect('/')
+  redirect("/");
 }
 
 /**
@@ -30,20 +30,20 @@ export async function signIn(
  */
 export async function signUp(
   _prevState: AuthActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AuthActionState> {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  const confirmPassword = formData.get('confirmPassword') as string
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
 
-  if (password !== confirmPassword) return { error: 'Passwords do not match' }
+  if (password !== confirmPassword) return { error: "Passwords do not match" };
 
-  const supabase = await createClient()
-  const { error } = await supabase.auth.signUp({ email, password })
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signUp({ email, password });
 
-  if (error) return { error: error.message }
+  if (error) return { error: error.message };
 
-  redirect('/')
+  redirect("/");
 }
 
 /**
@@ -51,7 +51,7 @@ export async function signUp(
  * Call directly as a form action — no useActionState needed.
  */
 export async function signOut(): Promise<never> {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect('/login')
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
 }

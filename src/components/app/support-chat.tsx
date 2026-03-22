@@ -1,20 +1,20 @@
 // 'use client' required: manages open/close state, question input, message history, and API fetch.
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { HelpCircle, Loader2, Send, Sparkles, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+import { useEffect, useRef, useState } from "react";
+import { HelpCircle, Loader2, Send, Sparkles, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface Message {
-  question: string
-  answer: string | null
-  loading: boolean
+  question: string;
+  answer: string | null;
+  loading: boolean;
 }
 
 interface SupportChatProps {
-  isAuthenticated: boolean
+  isAuthenticated: boolean;
 }
 
 /**
@@ -23,53 +23,58 @@ interface SupportChatProps {
  * POSTs questions to /api/support and displays the agent's plain-text answers inline.
  */
 export function SupportChat({ isAuthenticated }: SupportChatProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [question, setQuestion] = useState("")
-  const [messages, setMessages] = useState<Message[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to latest message whenever messages update
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  if (!isAuthenticated) return null
+  if (!isAuthenticated) return null;
 
-  const isLoading = messages.some((m) => m.loading)
+  const isLoading = messages.some((m) => m.loading);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const q = question.trim()
-    if (!q || isLoading) return
+    e.preventDefault();
+    const q = question.trim();
+    if (!q || isLoading) return;
 
-    setQuestion("")
-    setError(null)
-    setMessages((prev) => [...prev, { question: q, answer: null, loading: true }])
+    setQuestion("");
+    setError(null);
+    setMessages((prev) => [
+      ...prev,
+      { question: q, answer: null, loading: true },
+    ]);
 
     try {
       const res = await fetch("/api/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
-      })
-      const data = await res.json() as { answer?: string; error?: string }
-      if (!res.ok) throw new Error(data.error ?? "Failed to get answer")
+      });
+      const data = (await res.json()) as { answer?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Failed to get answer");
 
       setMessages((prev) =>
         prev.map((m, i) =>
-          i === prev.length - 1 ? { ...m, answer: data.answer ?? "", loading: false } : m
-        )
-      )
+          i === prev.length - 1
+            ? { ...m, answer: data.answer ?? "", loading: false }
+            : m,
+        ),
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
+      setError(err instanceof Error ? err.message : "Something went wrong");
       setMessages((prev) =>
         prev.map((m, i) =>
-          i === prev.length - 1 ? { ...m, loading: false } : m
-        )
-      )
+          i === prev.length - 1 ? { ...m, loading: false } : m,
+        ),
+      );
     }
-  }
+  };
 
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3">
@@ -80,7 +85,9 @@ export function SupportChat({ isAuthenticated }: SupportChatProps) {
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">Support</span>
+              <span className="text-sm font-semibold text-foreground">
+                Support
+              </span>
             </div>
             <Button
               variant="ghost"
@@ -97,7 +104,8 @@ export function SupportChat({ isAuthenticated }: SupportChatProps) {
           <div className="flex max-h-72 flex-col gap-3 overflow-y-auto p-4">
             {messages.length === 0 && (
               <p className="text-center text-xs text-muted-foreground">
-                Ask me anything about the app — habits, streaks, goals, coaching, and more.
+                Ask me anything about the app — habits, streaks, goals,
+                coaching, and more.
               </p>
             )}
             {messages.map((msg, i) => (
@@ -119,9 +127,7 @@ export function SupportChat({ isAuthenticated }: SupportChatProps) {
                 ) : null}
               </div>
             ))}
-            {error && (
-              <p className="text-xs text-destructive">{error}</p>
-            )}
+            {error && <p className="text-xs text-destructive">{error}</p>}
             <div ref={messagesEndRef} />
           </div>
 
@@ -161,13 +167,14 @@ export function SupportChat({ isAuthenticated }: SupportChatProps) {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={isOpen ? "Close support chat" : "Open support chat"}
       >
-        {isOpen
-          ? <X className="h-5 w-5" />
-          : <HelpCircle className="h-5 w-5" />
-        }
+        {isOpen ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <HelpCircle className="h-5 w-5" />
+        )}
       </Button>
     </div>
-  )
+  );
 }
 
-export default SupportChat
+export default SupportChat;
