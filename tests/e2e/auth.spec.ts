@@ -24,17 +24,7 @@ test.describe('Authentication', () => {
     await page.goto('/login')
     await page.getByLabel('Email').fill(email)
     await page.getByLabel('Password').fill(password)
-    const responsePromise = page.waitForResponse(
-      (res) => res.request().method() === 'POST',
-      { timeout: 35000 }
-    )
     await page.getByRole('button', { name: 'Sign in' }).click()
-    try {
-      const response = await responsePromise
-      console.log('[auth test] POST response:', response.status(), response.url())
-    } catch (e) {
-      console.log('[auth test] no POST response within 35s:', e)
-    }
 
     await page.waitForURL('/', { waitUntil: 'commit', timeout: 60000 })
     await expect(page.getByRole('heading', { name: 'Habit Tracker' })).toBeVisible()
