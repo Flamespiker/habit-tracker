@@ -16,8 +16,13 @@ export async function login(page: Page): Promise<void> {
   }
 
   await page.goto('/login')
+  console.log('[login] filling email')
   await page.getByLabel('Email').fill(email)
+  console.log('[login] filling password')
   await page.getByLabel('Password').fill(password)
+  console.log('[login] clicking Sign in')
   await page.getByRole('button', { name: 'Sign in' }).click()
+  console.log('[login] waiting for URL /')
   await page.waitForURL('/', { waitUntil: 'commit', timeout: 60000 })
+  console.log('[login] reached /')
 }
