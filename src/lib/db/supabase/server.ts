@@ -2,6 +2,18 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/lib/types/database.types'
 
+// Cap all Supabase HTTP calls at 30s so Server Actions fail fast instead of
+// hanging until the Playwright test timeout (120s) fires. Without this, a slow
+// Supabase cold-start causes the signInWithPassword call to hang indefinitely
+// and makes CI auth tests time out.
+function fetchWithTimeout(url: RequestInfo | URL, options?: RequestInit): Promise<Response> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 30000)
+  return fetch(url, { ...options, signal: controller.signal }).finally(() =>
+    clearTimeout(timeoutId)
+  )
+}
+
 /**
  * Creates a Supabase client for use in Server Components, Server Actions,
  * and Route Handlers. Reads and writes cookies via Next.js `cookies()`.
@@ -28,6 +40,7 @@ export async function createClient() {
           }
         },
       },
+      global: { fetch: fetchWithTimeout },
     }
   )
 }

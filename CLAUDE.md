@@ -143,12 +143,15 @@ This is required because `async` server fetching and `useState` cannot coexist i
 Current examples: HabitsClient, GoalsClient, HabitDashboard (initialHabits prop), LogClient (initialHabits prop).
 
 ## Playwright E2E Notes
-- Config: `playwright.config.ts` — 60s timeout per test, 1 worker (serial), chromium only, baseURL `http://localhost:3000`
-- Helpers: `tests/e2e/helpers/login.ts` — logs in via UI using `TEST_EMAIL` + `TEST_PASSWORD` from `.env.local`; waits for `waitForURL('/')`
-- **Streaming SSR + loading skeletons**: `page.goto(url)` fires `load` before streamed SSR content arrives. Always wait for a landmark element (e.g. `expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible()`) before interacting — `waitForLoadState('networkidle')` alone is insufficient because skeleton `<div>`s have no network requests
-- **Navigation tests**: always use `page.waitForURL(url)` (actively waits for URL change, uses 60s test timeout) instead of `expect(page).toHaveURL(...)` (only retries for 5s assertion timeout — too short for Supabase auth redirects and SSR pages). Use `toHaveURL` only when asserting the page is NOT navigating away (e.g. invalid credentials staying on /login)
-- **After dialog close + Server Component list**: `waitForLoadState('networkidle')` then `page.reload()` then `waitForLoadState('networkidle')` before asserting new items — Server Component lists require a full reload to re-fetch from DB
-- **Skip conditions**: `page.getByRole('link').filter({ hasText: /./i }).count()` matches nav links too — use specific selectors (`a[href^="/goals/"]`) with `isVisible()` for meaningful skip checks
+- Config: `playwright.config.ts` — 120s timeout per test, 1 worker (serial), chromium only, baseURL `http://localhost:3000`; webServer: CI runs `npm run build && npm start` (300s startup), local reuses existing dev server
+- Helpers: `tests/e2e/helpers/login.ts` — logs in via UI; uses `TEST_EMAIL` + `TEST_PASSWORD` from `.env.local`; waits with `page.waitForURL('/', { waitUntil: 'commit', timeout: 60000 })`
+- **Post-auth navigation**: use `page.waitForURL('/', { waitUntil: 'commit' })` — `commit` fires the moment the URL changes without waiting for the full page load (MongoDB cold starts can make `load` take 2+ min). Use `waitUntil: 'commit'` for all post-login redirects
+- **`waitForURL` not `toHaveURL` for navigation**: `toHaveURL` only retries for 5s; `waitForURL` uses the full test timeout. Use `toHaveURL` only when asserting the page does NOT navigate (e.g. invalid credentials staying on /login)
+- **Streaming SSR + loading skeletons**: `page.goto(url)` fires `load` before streamed SSR content arrives. Always wait for a landmark element (e.g. `expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible()`) before interacting
+- **Dialog close after submit**: `page.waitForSelector('[role=dialog]', { state: 'hidden', timeout: 15000 })` — not `expect(dialog).not.toBeVisible()` — gives API call + animation time to complete
+- **Server Component list after creation**: `waitForLoadState('networkidle')` → `page.reload()` → `waitForLoadState('networkidle')` before asserting new items — Server Components require a full reload to re-fetch from DB
+- **Server Actions + networkidle**: do NOT use `waitForLoadState('networkidle')` before `waitForURL` for auth flows — Server Actions keep the connection open during processing and networkidle will never fire
+- **Skip conditions**: `getByRole('link').filter({ hasText: /./i }).count()` matches nav links — use specific selectors (`a[href^="/goals/"]`) with `isVisible()` for meaningful skip checks
 
 ## Commands
 npm run dev → dev server
