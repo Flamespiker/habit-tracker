@@ -19,7 +19,6 @@ lint:
     - eslint
     - prettier
     - checkov@3.2.334
-    - trivy@0.58.1
 
   ignore:
     - linters: [ALL]

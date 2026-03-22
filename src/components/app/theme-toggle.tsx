@@ -24,7 +24,7 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression, react-hooks/set-state-in-effect
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   if (!mounted) return null;
