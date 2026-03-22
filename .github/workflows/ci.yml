@@ -42,6 +42,9 @@ jobs:
           key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: nextjs-${{ runner.os }}-
 
+      - name: Lint
+        run: npx eslint src/
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
