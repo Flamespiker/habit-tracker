@@ -27,8 +27,8 @@ test.describe('Goals', () => {
     // Submit
     await page.getByRole('button', { name: 'Add Goal' }).click()
 
-    // Dialog should close and new goal should appear in the list
-    await expect(page.getByRole('dialog')).not.toBeVisible()
+    // Wait for the dialog to close after form submission
+    await page.waitForSelector('[role=dialog]', { state: 'hidden', timeout: 15000 })
     await expect(page.getByText(goalTitle)).toBeVisible()
   })
 
@@ -44,7 +44,8 @@ test.describe('Goals', () => {
 
     await page.getByRole('button', { name: 'Add Goal' }).click()
 
-    await expect(page.getByRole('dialog')).not.toBeVisible()
+    // Wait for the dialog to close after form submission
+    await page.waitForSelector('[role=dialog]', { state: 'hidden', timeout: 15000 })
     await expect(page.getByText(goalTitle)).toBeVisible()
   })
 

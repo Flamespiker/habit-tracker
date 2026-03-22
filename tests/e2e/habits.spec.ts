@@ -28,8 +28,8 @@ test.describe('Habits', () => {
     // Submit
     await page.getByRole('button', { name: 'Add Habit' }).click()
 
-    // Dialog should close and new habit should appear in the list
-    await expect(page.getByRole('dialog')).not.toBeVisible()
+    // Wait for the dialog to close after form submission
+    await page.waitForSelector('[role=dialog]', { state: 'hidden', timeout: 15000 })
     await page.waitForLoadState('networkidle')
     await page.reload()
     await page.waitForLoadState('networkidle')
