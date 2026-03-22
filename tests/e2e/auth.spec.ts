@@ -26,7 +26,7 @@ test.describe('Authentication', () => {
     await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: 'Sign in' }).click()
 
-    await page.waitForURL('/')
+    await page.waitForURL('/', { waitUntil: 'commit' })
     await expect(page.getByRole('heading', { name: 'Habit Tracker' })).toBeVisible()
   })
 
@@ -40,10 +40,10 @@ test.describe('Authentication', () => {
     await page.getByLabel('Email').fill(email)
     await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: 'Sign in' }).click()
-    await page.waitForURL('/')
+    await page.waitForURL('/', { waitUntil: 'commit' })
 
     // Navigating back to /login should redirect away
     await page.goto('/login')
-    await page.waitForURL('/')
+    await page.waitForURL('/', { waitUntil: 'commit' })
   })
 })
