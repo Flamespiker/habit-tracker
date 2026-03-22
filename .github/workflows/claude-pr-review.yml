@@ -8,6 +8,9 @@ on:
       - "src/**"
       - "tests/**"
 
+permissions:
+  contents: read
+
 jobs:
   claude-review:
     name: Claude Code Review
