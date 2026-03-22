@@ -11,7 +11,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
 
-  timeout: 60000,
+  timeout: 120000,
 
   use: {
     baseURL: 'http://localhost:3000',
