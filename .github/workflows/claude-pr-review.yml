@@ -1,0 +1,46 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'tests/**'
+
+jobs:
+  claude-review:
+    name: Claude Code Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          review_instructions: |
+            Review this pull request for the following, and be constructive — always explain why something matters and suggest a concrete fix:
+
+            1. **TypeScript correctness** — flag any `any` types; suggest the correct type or `unknown` with a narrowing guard.
+
+            2. **DB usage** — Supabase (habits, goals, checkins, users) is for structured relational data; MongoDB (ai_coaching, user_preferences) is for AI responses and flexible data. Flag if the wrong DB is used for a given data type.
+
+            3. **RLS / auth** — every Supabase query in an API route must use the authenticated server client (`createClient()` from server.ts + `supabase.auth.getUser()`). Flag any query that uses the admin client or skips auth outside of /api/health. Server Component pages must redirect to /login if no user.
+
+            4. **Playwright tests** — new user-facing features or API routes should have corresponding E2E coverage in tests/e2e/. Flag if a significant feature ships with no tests.
+
+            5. **CLAUDE.md conventions**:
+               - Server Components by default; Client Components only when useState/useEffect/event handlers are needed — must have a `// 'use client' required: ...` comment explaining why
+               - Named export + default export on every component
+               - JSDoc on every exported component
+               - DB queries only in src/lib/db/ — never inline in components or pages
+               - Auth logic only in src/lib/auth/
+               - No `min-h-screen` on HabitDashboard's outer wrapper
+               - Native `<select>` and `<textarea>` (shadcn Select and Textarea are not installed)
+               - `page.waitForURL()` in Playwright navigation tests, not `expect(page).toHaveURL()` for post-navigation assertions

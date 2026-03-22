@@ -1,0 +1,19 @@
+name: Trunk Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  trunk:
+    name: Trunk Code Quality
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: trunk-io/trunk-action@v1
