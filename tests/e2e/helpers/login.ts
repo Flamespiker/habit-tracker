@@ -19,5 +19,6 @@ export async function login(page: Page): Promise<void> {
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.waitForURL('/')
+  await page.waitForLoadState('networkidle', { timeout: 30000 })
+  await page.waitForURL('/', { timeout: 30000 })
 }
