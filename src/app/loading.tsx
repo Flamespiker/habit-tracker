@@ -1,6 +1,6 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { HabitCardSkeleton } from "@/components/app/habits/HabitCardSkeleton"
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { HabitCardSkeleton } from "@/components/app/habits/HabitCardSkeleton";
 
 /** Skeleton placeholder for a single StatsCard (icon + label + value). */
 function StatsCardSkeleton() {
@@ -16,7 +16,7 @@ function StatsCardSkeleton() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 /**
@@ -66,7 +66,11 @@ export default function DashboardLoading() {
                 <Skeleton className="h-4 w-28" />
                 <div className="flex items-end gap-1.5 h-24">
                   {Array.from({ length: 7 }).map((_, i) => (
-                    <Skeleton key={i} className="flex-1 rounded-sm" style={{ height: `${40 + (i % 3) * 20}%` }} />
+                    <Skeleton
+                      key={i}
+                      className="flex-1 rounded-sm"
+                      style={{ height: `${40 + (i % 3) * 20}%` }}
+                    />
                   ))}
                 </div>
               </CardContent>
@@ -85,5 +89,5 @@ export default function DashboardLoading() {
         </div>
       </div>
     </div>
-  )
+  );
 }

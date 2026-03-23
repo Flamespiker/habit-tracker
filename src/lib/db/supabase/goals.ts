@@ -1,16 +1,23 @@
-import { createClient } from './server'
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Tables, TablesInsert, TablesUpdate } from '@/lib/types/database.types'
-import type { Database } from '@/lib/types/database.types'
-import type { Goal, GoalStatus } from '@/lib/types'
+import { createClient } from "./server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type {
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+} from "@/lib/types/database.types";
+import type { Database } from "@/lib/types/database.types";
+import type { Goal, GoalStatus } from "@/lib/types";
 
-type Client = SupabaseClient<Database>
+type Client = SupabaseClient<Database>;
 
 /** DB-level goal row — matches the `goals` table exactly. */
-export type GoalRow = Tables<'goals'>
+export type GoalRow = Tables<"goals">;
 
-type CreateGoalInput = TablesInsert<'goals'>
-type UpdateGoalInput = Omit<TablesUpdate<'goals'>, 'id' | 'user_id' | 'created_at'>
+type CreateGoalInput = TablesInsert<"goals">;
+type UpdateGoalInput = Omit<
+  TablesUpdate<"goals">,
+  "id" | "user_id" | "created_at"
+>;
 
 /**
  * Maps a DB goal row to the app-level Goal type.
@@ -27,7 +34,7 @@ export function toGoal(row: GoalRow): Goal {
     status: row.status as GoalStatus,
     created_at: row.created_at,
     habit_ids: [],
-  }
+  };
 }
 
 /**
@@ -35,32 +42,38 @@ export function toGoal(row: GoalRow): Goal {
  * Returns DB rows — callers must merge `habit_ids` from the `goal_habits` join table.
  * Pass `client` to override the default server client (e.g. the admin client in Server Components).
  */
-export async function getGoals(userId: string, client?: Client): Promise<GoalRow[]> {
-  const supabase = client ?? await createClient()
+export async function getGoals(
+  userId: string,
+  client?: Client,
+): Promise<GoalRow[]> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
-    .from('goals')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: true })
+    .from("goals")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
 
-  if (error) throw error
-  return data
+  if (error) throw error;
+  return data;
 }
 
 /**
  * Inserts a new goal and returns the created row.
  * Pass `client` to override the default server client (e.g. the admin client in API routes).
  */
-export async function createGoal(goal: CreateGoalInput, client?: Client): Promise<GoalRow> {
-  const supabase = client ?? await createClient()
+export async function createGoal(
+  goal: CreateGoalInput,
+  client?: Client,
+): Promise<GoalRow> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
-    .from('goals')
+    .from("goals")
     .insert(goal)
     .select()
-    .single()
+    .single();
 
-  if (error) throw error
-  return data
+  if (error) throw error;
+  return data;
 }
 
 /**
@@ -70,65 +83,78 @@ export async function createGoal(goal: CreateGoalInput, client?: Client): Promis
 export async function createGoalHabits(
   goalId: string,
   habitIds: string[],
-  client?: Client
+  client?: Client,
 ): Promise<void> {
-  if (habitIds.length === 0) return
-  const supabase = client ?? await createClient()
+  if (habitIds.length === 0) return;
+  const supabase = client ?? (await createClient());
   const { error } = await supabase
-    .from('goal_habits')
-    .insert(habitIds.map((habitId) => ({ goal_id: goalId, habit_id: habitId })))
+    .from("goal_habits")
+    .insert(
+      habitIds.map((habitId) => ({ goal_id: goalId, habit_id: habitId })),
+    );
 
-  if (error) throw error
+  if (error) throw error;
 }
 
 /**
  * Fetches a single goal by ID, scoped to the given user.
  * Returns null if no matching row exists or the goal belongs to a different user.
  */
-export async function getGoalById(userId: string, goalId: string, client?: Client): Promise<GoalRow | null> {
-  const supabase = client ?? await createClient()
+export async function getGoalById(
+  userId: string,
+  goalId: string,
+  client?: Client,
+): Promise<GoalRow | null> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
-    .from('goals')
-    .select('*')
-    .eq('id', goalId)
-    .eq('user_id', userId)
-    .single()
+    .from("goals")
+    .select("*")
+    .eq("id", goalId)
+    .eq("user_id", userId)
+    .single();
 
   if (error) {
-    if (error.code === 'PGRST116') return null // no rows found
-    throw error
+    if (error.code === "PGRST116") return null; // no rows found
+    throw error;
   }
-  return data
+  return data;
 }
 
 /**
  * Fetches the habit IDs linked to a goal via the goal_habits join table.
  * Returns an empty array if the goal has no linked habits.
  */
-export async function getGoalHabitIds(goalId: string, client?: Client): Promise<string[]> {
-  const supabase = client ?? await createClient()
+export async function getGoalHabitIds(
+  goalId: string,
+  client?: Client,
+): Promise<string[]> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
-    .from('goal_habits')
-    .select('habit_id')
-    .eq('goal_id', goalId)
+    .from("goal_habits")
+    .select("habit_id")
+    .eq("goal_id", goalId);
 
-  if (error) throw error
-  return data.map((row) => row.habit_id)
+  if (error) throw error;
+  return data.map((row) => row.habit_id);
 }
 
 /**
  * Updates fields on an existing goal and returns the updated row.
  * Pass `client` to override the default server client.
  */
-export async function updateGoal(id: string, updates: UpdateGoalInput, client?: Client): Promise<GoalRow> {
-  const supabase = client ?? await createClient()
+export async function updateGoal(
+  id: string,
+  updates: UpdateGoalInput,
+  client?: Client,
+): Promise<GoalRow> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
-    .from('goals')
+    .from("goals")
     .update(updates)
-    .eq('id', id)
+    .eq("id", id)
     .select()
-    .single()
+    .single();
 
-  if (error) throw error
-  return data
+  if (error) throw error;
+  return data;
 }

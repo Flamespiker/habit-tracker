@@ -1,31 +1,40 @@
 // 'use client' required: uses usePathname() for active route highlighting and useState for mobile menu toggle.
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { LayoutDashboard, ListChecks, LogOut, Menu, NotebookPen, Settings, Target, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { ThemeToggle } from "@/components/app/theme-toggle"
-import { signOut } from "@/lib/auth/actions"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  ListChecks,
+  LogOut,
+  Menu,
+  NotebookPen,
+  Settings,
+  Target,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/app/theme-toggle";
+import { signOut } from "@/lib/auth/actions";
 
 interface NavLink {
-  href: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const navLinks: NavLink[] = [
-  { href: "/",         label: "Dashboard", icon: LayoutDashboard },
-  { href: "/habits",   label: "Habits",    icon: ListChecks },
-  { href: "/goals",    label: "Goals",     icon: Target },
-  { href: "/log",      label: "Log",       icon: NotebookPen },
-  { href: "/settings", label: "Settings",  icon: Settings },
-]
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/habits", label: "Habits", icon: ListChecks },
+  { href: "/goals", label: "Goals", icon: Target },
+  { href: "/log", label: "Log", icon: NotebookPen },
+  { href: "/settings", label: "Settings", icon: Settings },
+];
 
 interface NavigationProps {
-  userEmail: string | null
+  userEmail: string | null;
 }
 
 /**
@@ -33,18 +42,17 @@ interface NavigationProps {
  * a truncated user email indicator, and a sign-out button.
  */
 export function Navigation({ userEmail }: NavigationProps) {
-  const pathname = usePathname()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   function isActive(href: string) {
-    if (href === "/") return pathname === "/"
-    return pathname === href || pathname.startsWith(href + "/")
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(href + "/");
   }
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-
         {/* Logo */}
         <Link
           href="/"
@@ -65,7 +73,7 @@ export function Navigation({ userEmail }: NavigationProps) {
                 "gap-1.5",
                 isActive(href)
                   ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Link href={href}>
@@ -105,7 +113,9 @@ export function Navigation({ userEmail }: NavigationProps) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-label={
+              mobileOpen ? "Close navigation menu" : "Open navigation menu"
+            }
             onClick={() => setMobileOpen((prev) => !prev)}
           >
             {mobileOpen ? <X /> : <Menu />}
@@ -125,7 +135,7 @@ export function Navigation({ userEmail }: NavigationProps) {
                 "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
                 isActive(href)
                   ? "bg-accent text-accent-foreground font-medium"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
               )}
             >
               <Icon className="h-4 w-4" />
@@ -152,7 +162,7 @@ export function Navigation({ userEmail }: NavigationProps) {
         </div>
       )}
     </nav>
-  )
+  );
 }
 
-export default Navigation
+export default Navigation;

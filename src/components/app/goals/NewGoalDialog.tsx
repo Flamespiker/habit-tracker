@@ -1,9 +1,9 @@
 // 'use client' required: manages form state (useState), async submit handler, checkbox multi-select, and dialog open/close.
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,20 +12,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
-import { Goal, GoalStatus, Habit } from "@/lib/types"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { Goal, GoalStatus, Habit } from "@/lib/types";
 
 // NOTE: shadcn Select is not installed — using native <select> styled to match Input.
 // NOTE: "paused" is not a valid GoalStatus — using active | completed | abandoned per the type.
 
 interface NewGoalDialogProps {
   /** Habit list passed from the Server Component page for the linked-habits multi-select. */
-  habits: Habit[]
+  habits: Habit[];
   /** Called with the newly created goal after a successful save. */
-  onAdd?: (goal: Goal) => void
+  onAdd?: (goal: Goal) => void;
 }
 
 const selectClassName = cn(
@@ -34,7 +34,7 @@ const selectClassName = cn(
   "focus:border-ring focus:ring-2 focus:ring-ring/50",
   "disabled:cursor-not-allowed disabled:opacity-50",
   "dark:bg-input/30",
-)
+);
 
 /**
  * A 'New Goal' trigger button that opens a dialog form for creating a goal.
@@ -42,65 +42,65 @@ const selectClassName = cn(
  * Persists the new goal via POST /api/goals on submit.
  */
 export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState("")
-  const [targetDate, setTargetDate] = useState("")
-  const [status, setStatus] = useState<GoalStatus>("active")
-  const [habitIds, setHabitIds] = useState<string[]>([])
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [targetDate, setTargetDate] = useState("");
+  const [status, setStatus] = useState<GoalStatus>("active");
+  const [habitIds, setHabitIds] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const resetForm = () => {
-    setTitle("")
-    setTargetDate("")
-    setStatus("active")
-    setHabitIds([])
-    setError(null)
-  }
+    setTitle("");
+    setTargetDate("");
+    setStatus("active");
+    setHabitIds([]);
+    setError(null);
+  };
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) resetForm()
-    setOpen(next)
-  }
+    if (!next) resetForm();
+    setOpen(next);
+  };
 
   const toggleHabit = (id: string) => {
     setHabitIds((prev) =>
-      prev.includes(id) ? prev.filter((h) => h !== id) : [...prev, id]
-    )
-  }
+      prev.includes(id) ? prev.filter((h) => h !== id) : [...prev, id],
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!title.trim()) return
+    e.preventDefault();
+    if (!title.trim()) return;
 
-    setSubmitting(true)
-    setError(null)
+    setSubmitting(true);
+    setError(null);
 
     try {
-      const res = await fetch('/api/goals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
           target_date: targetDate || null,
           status,
           habit_ids: habitIds,
         }),
-      })
-      const json = await res.json()
+      });
+      const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? 'Failed to create goal.')
-        return
+        setError(json.error ?? "Failed to create goal.");
+        return;
       }
-      onAdd?.(json.goal as Goal)
-      resetForm()
-      setOpen(false)
+      onAdd?.(json.goal as Goal);
+      resetForm();
+      setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create goal.')
+      setError(err instanceof Error ? err.message : "Failed to create goal.");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -119,7 +119,11 @@ export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form id="new-goal-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form
+          id="new-goal-form"
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4"
+        >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="goal-title">Title</Label>
             <Input
@@ -134,7 +138,9 @@ export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="goal-target-date">
               Target Date{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
+              <span className="font-normal text-muted-foreground">
+                (optional)
+              </span>
             </Label>
             <Input
               id="goal-target-date"
@@ -161,7 +167,9 @@ export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
           <div className="flex flex-col gap-1.5">
             <Label>
               Link Habits{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
+              <span className="font-normal text-muted-foreground">
+                (optional)
+              </span>
             </Label>
             <div className="flex flex-col gap-2 rounded-lg border border-input p-3">
               {habits.map((habit) => (
@@ -181,13 +189,15 @@ export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
             </div>
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={submitting}>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={submitting}
+          >
             Cancel
           </Button>
           <Button type="submit" form="new-goal-form" disabled={submitting}>
@@ -196,7 +206,7 @@ export function NewGoalDialog({ habits, onAdd }: NewGoalDialogProps) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-export default NewGoalDialog
+export default NewGoalDialog;

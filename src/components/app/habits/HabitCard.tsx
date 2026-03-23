@@ -1,20 +1,20 @@
 // TODO: Display a single habit card with its category badge, name, streak, weekly progress bar, and a check-in toggle button.
 
 // 'use client' required: check-in button uses onClick to call the onToggle callback.
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Check, Flame } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { cn } from "@/lib/utils"
-import { Habit, categoryColors, categoryLabels } from "@/lib/types"
+import Link from "next/link";
+import { Check, Flame } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { Habit, categoryColors, categoryLabels } from "@/lib/types";
 
 interface HabitCardProps {
-  habit: Habit
-  onToggle: (id: string) => void
+  habit: Habit;
+  onToggle: (id: string) => void;
 }
 
 /**
@@ -22,11 +22,11 @@ interface HabitCardProps {
  * and a button to toggle today's completion.
  */
 export function HabitCard({ habit, onToggle }: HabitCardProps) {
-  const completedDays = habit.weekly_data.filter((v) => v > 0).length
+  const completedDays = habit.weekly_data.filter((v) => v > 0).length;
   // Fall back to 7 when target_days is 0 or unset to avoid dividing by zero
-  const target = habit.target_days || 7
-  const progressPct = Math.min(Math.round((completedDays / target) * 100), 100)
-  const colors = categoryColors[habit.category]
+  const target = habit.target_days || 7;
+  const progressPct = Math.min(Math.round((completedDays / target) * 100), 100);
+  const colors = categoryColors[habit.category];
 
   return (
     <Card className="border-border bg-card">
@@ -55,7 +55,9 @@ export function HabitCard({ habit, onToggle }: HabitCardProps) {
             variant={habit.completed_today ? "default" : "outline"}
             size="icon"
             onClick={() => onToggle(habit.id)}
-            aria-label={habit.completed_today ? "Mark incomplete" : "Mark complete"}
+            aria-label={
+              habit.completed_today ? "Mark incomplete" : "Mark complete"
+            }
             className="mt-0.5 shrink-0"
           >
             <Check />
@@ -65,13 +67,15 @@ export function HabitCard({ habit, onToggle }: HabitCardProps) {
         <div className="mt-4">
           <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
             <span>This week</span>
-            <span>{completedDays}/{target} days</span>
+            <span>
+              {completedDays}/{target} days
+            </span>
           </div>
           <Progress value={progressPct} />
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default HabitCard
+export default HabitCard;

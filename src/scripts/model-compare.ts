@@ -121,9 +121,7 @@ async function runComparison(): Promise<void> {
     console.log(`\n📊 ${r.label}`);
     console.log(`   Model:    ${r.model}`);
     console.log(`   Temp:     ${r.temperature}`);
-    console.log(
-      `   Tokens:   ${r.input_tokens} in / ${r.output_tokens} out`
-    );
+    console.log(`   Tokens:   ${r.input_tokens} in / ${r.output_tokens} out`);
     console.log(`   Latency:  ${r.latency_ms}ms`);
     console.log(`   Response: "${r.response}"`);
   }
@@ -133,10 +131,7 @@ async function runComparison(): Promise<void> {
   console.log("SUMMARY TABLE");
   console.log("=".repeat(80));
   console.log(
-    "Label".padEnd(45) +
-      "Latency".padEnd(12) +
-      "In tok".padEnd(10) +
-      "Out tok"
+    "Label".padEnd(45) + "Latency".padEnd(12) + "In tok".padEnd(10) + "Out tok",
   );
   console.log("-".repeat(80));
   for (const r of results) {
@@ -144,7 +139,7 @@ async function runComparison(): Promise<void> {
       r.label.padEnd(45) +
         `${r.latency_ms}ms`.padEnd(12) +
         `${r.input_tokens}`.padEnd(10) +
-        `${r.output_tokens}`
+        `${r.output_tokens}`,
     );
   }
 

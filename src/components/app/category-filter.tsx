@@ -1,13 +1,13 @@
 // 'use client' required: renders interactive filter buttons with onClick event handlers.
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Category, categoryColors, categoryLabels } from "@/lib/types"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { Category, categoryColors, categoryLabels } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export interface CategoryFilterProps {
-  selected: Category | "all"
-  onSelect: (category: Category | "all") => void
+  selected: Category | "all";
+  onSelect: (category: Category | "all") => void;
 }
 
 const categories: (Category | "all")[] = [
@@ -17,7 +17,7 @@ const categories: (Category | "all")[] = [
   "mindfulness",
   "productivity",
   "learning",
-]
+];
 
 /**
  * A row of pill buttons for filtering habits by category.
@@ -27,9 +27,9 @@ export function CategoryFilter({ selected, onSelect }: CategoryFilterProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {categories.map((category) => {
-        const isAll = category === "all"
-        const isSelected = selected === category
-        const colors = isAll ? null : categoryColors[category]
+        const isAll = category === "all";
+        const isSelected = selected === category;
+        const colors = isAll ? null : categoryColors[category];
 
         return (
           <Button
@@ -41,16 +41,21 @@ export function CategoryFilter({ selected, onSelect }: CategoryFilterProps) {
               isSelected
                 ? isAll
                   ? "bg-foreground text-background hover:bg-foreground/90 hover:text-background"
-                  : cn(colors?.bg, colors?.text, colors?.border, "border hover:opacity-90")
-                : "bg-secondary text-muted-foreground hover:text-foreground"
+                  : cn(
+                      colors?.bg,
+                      colors?.text,
+                      colors?.border,
+                      "border hover:opacity-90",
+                    )
+                : "bg-secondary text-muted-foreground hover:text-foreground",
             )}
           >
             {isAll ? "All" : categoryLabels[category]}
           </Button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
-export default CategoryFilter
+export default CategoryFilter;

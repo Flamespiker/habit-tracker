@@ -1,18 +1,23 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { LucideIcon } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card";
+import { LucideIcon } from "lucide-react";
 
 export interface StatsCardProps {
-  title: string
-  value: string | number
-  subtitle?: string
-  icon: LucideIcon
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: LucideIcon;
 }
 
 /**
  * Displays a single summary statistic with an icon, value, and optional subtitle.
  * Used in the dashboard header row for habit metrics (total, streaks, completion).
  */
-export function StatsCard({ title, value, subtitle, icon: Icon }: StatsCardProps) {
+export function StatsCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+}: StatsCardProps) {
   return (
     <Card className="border-border bg-card">
       <CardContent className="p-4">
@@ -30,7 +35,7 @@ export function StatsCard({ title, value, subtitle, icon: Icon }: StatsCardProps
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default StatsCard
+export default StatsCard;

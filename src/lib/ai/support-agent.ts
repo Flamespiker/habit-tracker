@@ -1,14 +1,14 @@
-import { tool } from '@langchain/core/tools'
-import { ChatAnthropic } from '@langchain/anthropic'
-import { createReactAgent } from '@langchain/langgraph/prebuilt'
-import { HumanMessage } from '@langchain/core/messages'
-import { z } from 'zod'
+import { tool } from "@langchain/core/tools";
+import { ChatAnthropic } from "@langchain/anthropic";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { HumanMessage } from "@langchain/core/messages";
+import { z } from "zod";
 
-import { getHabits, toHabit } from '@/lib/db/supabase/habits'
-import { getCheckinsForPeriod } from '@/lib/db/supabase/checkins'
-import { getCoachingHistory } from '@/lib/db/mongo/ai-coaching'
+import { getHabits, toHabit } from "@/lib/db/supabase/habits";
+import { getCheckinsForPeriod } from "@/lib/db/supabase/checkins";
+import { getCoachingHistory } from "@/lib/db/mongo/ai-coaching";
 
-const MODEL_ID = 'claude-sonnet-4-6'
+const MODEL_ID = "claude-sonnet-4-6";
 
 // ---------------------------------------------------------------------------
 // Static help content
@@ -68,9 +68,9 @@ The Settings page lets you configure your coaching preferences and notification 
 - Notification Time: set a preferred time for reminders — saved on button click.
 - Changes are stored in MongoDB and applied the next time a coaching nudge is generated.
 `.trim(),
-}
+};
 
-const HELP_TOPICS = Object.keys(HELP_CONTENT).join(', ')
+const HELP_TOPICS = Object.keys(HELP_CONTENT).join(", ");
 
 // ---------------------------------------------------------------------------
 // Agent entry point
@@ -85,12 +85,15 @@ const HELP_TOPICS = Object.keys(HELP_CONTENT).join(', ')
  * Must be called from a server-side context (API route or Server Component)
  * because the Supabase query functions rely on next/headers cookies.
  */
-export async function runSupportAgent(userId: string, question: string): Promise<string> {
-  const now = new Date()
-  const today = now.toISOString().split('T')[0]
+export async function runSupportAgent(
+  userId: string,
+  question: string,
+): Promise<string> {
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     .toISOString()
-    .split('T')[0]
+    .split("T")[0];
 
   // -------------------------------------------------------------------------
   // Tools
@@ -98,65 +101,73 @@ export async function runSupportAgent(userId: string, question: string): Promise
 
   const getAppHelp = tool(
     async ({ topic }: { topic: string }): Promise<string> => {
-      const normalised = topic.toLowerCase().trim()
-      return HELP_CONTENT[normalised] ?? `No help found for topic "${topic}". Available topics: ${HELP_TOPICS}.`
+      const normalised = topic.toLowerCase().trim();
+      return (
+        HELP_CONTENT[normalised] ??
+        `No help found for topic "${topic}". Available topics: ${HELP_TOPICS}.`
+      );
     },
     {
-      name: 'getAppHelp',
+      name: "getAppHelp",
       description: `Returns help text for a specific app feature. Use this when the user asks how something works. Available topics: ${HELP_TOPICS}.`,
       schema: z.object({
-        topic: z.string().describe(`The feature to look up. One of: ${HELP_TOPICS}.`),
+        topic: z
+          .string()
+          .describe(`The feature to look up. One of: ${HELP_TOPICS}.`),
       }),
-    }
-  )
+    },
+  );
 
   const getUserHabits = tool(
     async (): Promise<string> => {
       const [habitRows, checkins] = await Promise.all([
         getHabits(userId),
         getCheckinsForPeriod(userId, sevenDaysAgo, today),
-      ])
-      const habits = habitRows.map((row) => toHabit(row, checkins))
+      ]);
+      const habits = habitRows.map((row) => toHabit(row, checkins));
       const summary = habits.map((h) => ({
         name: h.name,
         category: h.category,
         streak: h.streak,
         completed_today: h.completed_today,
         weekly_data: h.weekly_data,
-      }))
-      return JSON.stringify({ habits: summary, dateRange: { from: sevenDaysAgo, to: today } })
+      }));
+      return JSON.stringify({
+        habits: summary,
+        dateRange: { from: sevenDaysAgo, to: today },
+      });
     },
     {
-      name: 'getUserHabits',
+      name: "getUserHabits",
       description:
         "Fetches the user's current habits from Supabase including streak, today's completion status, and the past 7 days of check-in data. Use when the user asks about their habits or progress.",
       schema: z.object({}),
-    }
-  )
+    },
+  );
 
   const getRecentCoachingHistory = tool(
     async (): Promise<string> => {
-      const entries = await getCoachingHistory(userId, 5)
+      const entries = await getCoachingHistory(userId, 5);
       const relevant = entries.map((e) => ({
         type: e.type,
         content: e.content,
         created_at: e.created_at,
-      }))
-      return JSON.stringify(relevant)
+      }));
+      return JSON.stringify(relevant);
     },
     {
-      name: 'getCoachingHistory',
+      name: "getCoachingHistory",
       description:
         "Fetches the user's 5 most recent coaching nudges and summaries from MongoDB. Use when the user asks about past coaching, their recent summaries, or what the coach has said.",
       schema: z.object({}),
-    }
-  )
+    },
+  );
 
   // -------------------------------------------------------------------------
   // LLM + agent graph
   // -------------------------------------------------------------------------
 
-  const llm = new ChatAnthropic({ model: MODEL_ID })
+  const llm = new ChatAnthropic({ model: MODEL_ID });
 
   const agent = createReactAgent({
     llm,
@@ -170,7 +181,7 @@ You have access to three tools:
 Use tools when they would help answer the question more accurately. You do not need to call all tools — only those relevant to the question.
 
 Be concise and friendly. Answer in plain text with no markdown formatting.`,
-  })
+  });
 
   // -------------------------------------------------------------------------
   // Invoke
@@ -178,10 +189,10 @@ Be concise and friendly. Answer in plain text with no markdown formatting.`,
 
   const result = await agent.invoke({
     messages: [new HumanMessage(question)],
-  })
+  });
 
-  const lastMessage = result.messages.at(-1)
-  return typeof lastMessage?.content === 'string'
+  const lastMessage = result.messages.at(-1);
+  return typeof lastMessage?.content === "string"
     ? lastMessage.content
-    : JSON.stringify(lastMessage?.content)
+    : JSON.stringify(lastMessage?.content);
 }

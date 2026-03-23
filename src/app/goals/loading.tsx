@@ -1,5 +1,5 @@
-import { Skeleton } from "@/components/ui/skeleton"
-import { GoalCardSkeleton } from "@/components/app/goals/GoalCardSkeleton"
+import { Skeleton } from "@/components/ui/skeleton";
+import { GoalCardSkeleton } from "@/components/app/goals/GoalCardSkeleton";
 
 /**
  * Goals page loading state. Mirrors the layout of GoalsPage:
@@ -25,5 +25,5 @@ export default function GoalsLoading() {
         ))}
       </div>
     </main>
-  )
+  );
 }
