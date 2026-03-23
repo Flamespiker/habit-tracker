@@ -1,10 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./helpers/login";
 
 test.describe("Habit check-in", () => {
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-  });
 
   test("toggles a habit complete from the dashboard", async ({ page }) => {
     await page.goto("/");

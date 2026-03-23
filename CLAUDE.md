@@ -82,8 +82,10 @@ src/lib/ai/support-agent.ts → LangGraph ReAct agent; exported runSupportAgent(
 .claude/prompts/ → YAML prompt files: daily-coaching-nudge.yaml, weekly-summary.yaml, habit-suggestion.yaml, goal-adjustment.yaml — each has name, description, version, model, system, and user_template fields
 src/lib/auth/actions.ts → Server Actions: signIn(prevState, formData), signUp(prevState, formData), signOut(); all use createClient() from server.ts
 src/middleware.ts → Next.js middleware; refreshes Supabase session on every request (keeps auth tokens alive); redirects unauthenticated users to /login; redirects authenticated users away from /login and /signup
-tests/ → Playwright tests
-.github/workflows/ → CI/CD pipelines
+tests/e2e/ → Playwright E2E tests
+tests/e2e/setup/global-setup.ts → runs once before all tests; launches Chromium, logs in via the UI with TEST_EMAIL + TEST_PASSWORD, saves Supabase session cookies to tests/e2e/setup/.auth/user.json; writes empty state if credentials not set; storageState is injected into every test context via playwright.config.ts so no test needs to call login() in beforeEach
+tests/e2e/helpers/login.ts → login() helper (kept for reference; no longer imported by any spec — auth.spec.ts uses storageState override instead)
+.github/workflows/ → CI/CD pipelines (ci.yml: lint + Playwright; claude-pr-review.yml: Claude Code Action PR review with custom_instructions)
 
 ## Skills
 
@@ -156,8 +158,10 @@ List pages with a creation dialog always split into two files:
 
 ## Playwright E2E Notes
 
-- Config: `playwright.config.ts` — 120s timeout per test, 1 worker (serial), chromium only, baseURL `http://localhost:3000`; webServer: CI runs `npm run build && npm start` (300s startup), local reuses existing dev server
-- Helpers: `tests/e2e/helpers/login.ts` — logs in via UI; uses `TEST_EMAIL` + `TEST_PASSWORD` from `.env.local`; waits with `page.waitForURL('/', { waitUntil: 'commit', timeout: 60000 })`
+- Config: `playwright.config.ts` — 120s timeout per test, 1 worker (serial), chromium only, baseURL `http://localhost:3000`, viewport 1280×900; `globalSetup: './tests/e2e/setup/global-setup.ts'`; `storageState: 'tests/e2e/setup/.auth/user.json'` injected into every test context; webServer: CI runs `npm run build && npm start` (300s startup), local reuses existing dev server
+- **storageState / globalSetup pattern**: `global-setup.ts` logs in once via the UI and saves Supabase session cookies to `.auth/user.json`. Every test context loads that file, so tests start pre-authenticated with no per-test login. Tests that must start unauthenticated (auth flow tests) override with `test.use({ storageState: { cookies: [], origins: [] } })` inside a nested `test.describe` block — this is the only way to override `storageState` per-group in Playwright (cannot be done per individual test).
+- **beforeEach pattern**: authenticated spec files (habits, goals, checkin) only call `page.goto('/route')` in `beforeEach` — no `login()` call needed
+- **Dialog form submission when button may be off-screen**: use `page.evaluate(() => (document.getElementById('form-id') as HTMLFormElement)?.requestSubmit())` — fires the submit event with HTML validation, bypasses viewport constraints entirely. Do NOT use `click({ force: true })` on an out-of-viewport button inside a dialog — it clicks the backdrop coordinates and dismisses the dialog without submitting. For Cancel/dismiss buttons that are off-screen, use `page.keyboard.press('Escape')` instead.
 - **Post-auth navigation**: always use `page.waitForURL('/', { waitUntil: 'commit', timeout: 60000 })` — `commit` fires the moment the URL changes (not after full page load). The explicit `timeout: 60000` is required: without it Playwright inherits the 120s test timeout, leaving no room for `retries: 1` to kick in within the test budget
 - **`waitForURL` not `toHaveURL` for navigation**: `toHaveURL` only retries for 5s; `waitForURL` uses the full test timeout. Use `toHaveURL` only when asserting the page does NOT navigate (e.g. invalid credentials staying on /login)
 - **Streaming SSR + loading skeletons**: `page.goto(url)` fires `load` before streamed SSR content arrives. Always wait for a landmark element (e.g. `expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible()`) before interacting

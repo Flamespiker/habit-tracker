@@ -13,9 +13,13 @@ export default defineConfig({
 
   timeout: 120000,
 
+  globalSetup: "./tests/e2e/setup/global-setup.ts",
+
   use: {
     baseURL: "http://localhost:3000",
+    storageState: "tests/e2e/setup/.auth/user.json",
     trace: "on-first-retry",
+    viewport: { width: 1280, height: 900 },
   },
 
   projects: [

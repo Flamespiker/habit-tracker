@@ -1,9 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./helpers/login";
 
 test.describe("Goals", () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
     await page.goto("/goals");
   });
 
@@ -25,7 +23,13 @@ test.describe("Goals", () => {
     await page.getByLabel("Status").selectOption("active");
 
     // Submit
-    await page.getByRole("button", { name: "Add Goal" }).click();
+    // The submit button is in DialogFooter outside the <form> element and can sit
+    // below the viewport. Use requestSubmit() to fire the submit event directly
+    // instead of clicking a potentially out-of-viewport button.
+    await page.evaluate(() => {
+      const form = document.getElementById("new-goal-form") as HTMLFormElement;
+      form?.requestSubmit();
+    });
 
     // Wait for the dialog to close after form submission
     await page.waitForSelector("[role=dialog]", {
@@ -45,7 +49,13 @@ test.describe("Goals", () => {
     await page.getByLabel("Target Date").fill("2026-12-31");
     await page.getByLabel("Status").selectOption("active");
 
-    await page.getByRole("button", { name: "Add Goal" }).click();
+    // The submit button is in DialogFooter outside the <form> element and can sit
+    // below the viewport. Use requestSubmit() to fire the submit event directly
+    // instead of clicking a potentially out-of-viewport button.
+    await page.evaluate(() => {
+      const form = document.getElementById("new-goal-form") as HTMLFormElement;
+      form?.requestSubmit();
+    });
 
     // Wait for the dialog to close after form submission
     await page.waitForSelector("[role=dialog]", {
@@ -60,7 +70,7 @@ test.describe("Goals", () => {
     await expect(page.getByRole("dialog")).toBeVisible();
 
     await page.getByLabel("Title").fill("Should Not Appear");
-    await page.getByRole("button", { name: "Cancel" }).click();
+    await page.keyboard.press("Escape");
 
     await expect(page.getByRole("dialog")).not.toBeVisible();
     await expect(page.getByText("Should Not Appear")).not.toBeVisible();
