@@ -1,6 +1,20 @@
 import { test, expect } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
 test.describe("Goals", () => {
+  test.afterAll(async () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const email = process.env.TEST_EMAIL;
+    const password = process.env.TEST_PASSWORD;
+    if (!url || !anonKey || !email || !password) return;
+
+    const client = createClient(url, anonKey);
+    await client.auth.signInWithPassword({ email, password });
+    await client.from("goals").delete().like("title", "Test Goal%");
+    await client.from("goals").delete().like("title", "Dated Goal%");
+  });
+
   test.beforeEach(async ({ page }) => {
     await page.goto("/goals");
   });
