@@ -272,6 +272,7 @@ Out of Scope
 
 Auth is handled entirely by Supabase — no custom auth routes needed.
 All routes require an authenticated session. User ID is always read server-side from the session, never from the request body.
+Exception: `/api/internal/*` routes use a shared secret (`INTERNAL_API_SECRET`) instead of a Supabase session, and resolve the user via `INTERNAL_USER_ID` — intended for server-to-server calls from automation tools (e.g. n8n).
 
 ### Habits
 
@@ -309,6 +310,7 @@ All routes require an authenticated session. User ID is always read server-side 
 | `POST` | `/api/ai` ✅             | Stream a daily coaching nudge via Vercel AI SDK v6 `streamText` + `@ai-sdk/anthropic`; fetches habits + checkins + preferences in parallel; `onFinish` saves completed nudge to MongoDB; returns `text/plain` streaming response | MongoDB (write), Supabase (read) |
 | `POST` | `/api/weekly-summary` ✅ | Run LangGraph weekly summary agent; fetches 7-day habit data + coaching history; saves `WeeklySummaryContent` to MongoDB as `type: 'weekly_summary'`; returns `{ summary }` 201                                                  | MongoDB (write), Supabase (read) |
 | `POST` | `/api/support` ✅        | Run LangGraph support agent; body: `{ question: string }`; 400 if missing; agent selectively calls `getAppHelp`, `getUserHabits`, `getCoachingHistory` tools; returns `{ answer }` plain text 200                                | MongoDB (read), Supabase (read)  |
+| `POST` | `/api/internal/coaching` ✅ | Save coaching response without Supabase session; authenticated via `x-internal-secret` header (must match `INTERNAL_API_SECRET` env var); `user_id` read from `INTERNAL_USER_ID` env var; same body + validation as `/api/coaching`; returns 201 — used by n8n / automation workflows | MongoDB                          |
 | `GET`  | `/api/ai/[goalId]`       | Fetch past AI insights for a specific goal                                                                                                                                                                                       | MongoDB                          |
 
 ### Preferences
