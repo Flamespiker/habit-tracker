@@ -41,8 +41,8 @@ export default async function RootLayout({
           <Navigation userEmail={user?.email ?? null} />
           {children}
           <SupportChat isAuthenticated={!!user} />
-          <Analytics />
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
