@@ -6,6 +6,11 @@ import {
 } from "@/lib/db/mongo/ai-coaching";
 import type { IAiCoaching } from "@/lib/db/mongo/models/AiCoaching";
 import { logRequest } from "@/lib/logging";
+import {
+  checkInputLength,
+  checkContentFilter,
+  checkRateLimit,
+} from "@/lib/ai/guardrails";
 
 const ROUTE = "/api/coaching";
 
@@ -74,6 +79,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Rate limit check
+    const rateCheck = checkRateLimit(user.id);
+    if (!rateCheck.ok) {
+      logRequest({ route: ROUTE, method: "POST", status: rateCheck.status, duration_ms: Date.now() - start, userId });
+      return NextResponse.json({ error: rateCheck.error }, { status: rateCheck.status });
+    }
+
     const body: unknown = await request.json();
     if (typeof body !== "object" || body === null) {
       logRequest({ route: ROUTE, method: "POST", status: 400, duration_ms: Date.now() - start, userId });
@@ -98,6 +110,18 @@ export async function POST(request: Request) {
     if (content === undefined) {
       logRequest({ route: ROUTE, method: "POST", status: 400, duration_ms: Date.now() - start, userId });
       return NextResponse.json({ error: "content is required" }, { status: 400 });
+    }
+    if (typeof content === "string") {
+      const lengthCheck = checkInputLength(content);
+      if (!lengthCheck.ok) {
+        logRequest({ route: ROUTE, method: "POST", status: lengthCheck.status, duration_ms: Date.now() - start, userId });
+        return NextResponse.json({ error: lengthCheck.error }, { status: lengthCheck.status });
+      }
+      const contentCheck = checkContentFilter(content);
+      if (!contentCheck.ok) {
+        logRequest({ route: ROUTE, method: "POST", status: contentCheck.status, duration_ms: Date.now() - start, userId });
+        return NextResponse.json({ error: contentCheck.error }, { status: contentCheck.status });
+      }
     }
     if (typeof model !== "string" || model.trim() === "") {
       logRequest({ route: ROUTE, method: "POST", status: 400, duration_ms: Date.now() - start, userId });

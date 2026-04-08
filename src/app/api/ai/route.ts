@@ -7,6 +7,11 @@ import { getUserPreferences } from "@/lib/db/mongo/user-preferences";
 import { saveCoachingResponse } from "@/lib/db/mongo/ai-coaching";
 import { loadPrompt } from "@/lib/ai/prompts";
 import { logRequest } from "@/lib/logging";
+import {
+  checkInputLength,
+  checkContentFilter,
+  checkRateLimit,
+} from "@/lib/ai/guardrails";
 import { NextResponse } from "next/server";
 
 const ROUTE = "/api/ai";
@@ -42,6 +47,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Rate limit check
+  const rateCheck = checkRateLimit(user.id);
+  if (!rateCheck.ok) {
+    logRequest({ route: ROUTE, method: "POST", status: rateCheck.status, duration_ms: Date.now() - start, userId });
+    return NextResponse.json({ error: rateCheck.error }, { status: rateCheck.status });
+  }
+
   // Optional body params — gracefully handle missing or malformed body
   const body = (await request.json().catch(() => ({}))) as Record<
     string,
@@ -55,6 +67,20 @@ export async function POST(request: Request) {
     typeof body.journal_entry === "string" && body.journal_entry.trim()
       ? body.journal_entry.trim()
       : "none";
+
+  // Validate journal entry if provided
+  if (journalEntry !== "none") {
+    const lengthCheck = checkInputLength(journalEntry);
+    if (!lengthCheck.ok) {
+      logRequest({ route: ROUTE, method: "POST", status: lengthCheck.status, duration_ms: Date.now() - start, userId });
+      return NextResponse.json({ error: lengthCheck.error }, { status: lengthCheck.status });
+    }
+    const contentCheck = checkContentFilter(journalEntry);
+    if (!contentCheck.ok) {
+      logRequest({ route: ROUTE, method: "POST", status: contentCheck.status, duration_ms: Date.now() - start, userId });
+      return NextResponse.json({ error: contentCheck.error }, { status: contentCheck.status });
+    }
+  }
 
   const today = new Date().toISOString().split("T")[0];
 
