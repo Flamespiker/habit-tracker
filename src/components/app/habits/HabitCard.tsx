@@ -71,7 +71,10 @@ export function HabitCard({ habit, onToggle }: HabitCardProps) {
               {completedDays}/{target} days
             </span>
           </div>
-          <Progress value={progressPct} />
+          <Progress
+            value={progressPct}
+            aria-label={`${habit.name} weekly completion`}
+          />
         </div>
       </CardContent>
     </Card>

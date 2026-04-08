@@ -39,7 +39,7 @@ export default async function RootLayout({
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <Navigation userEmail={user?.email ?? null} />
-          {children}
+          <main>{children}</main>
           <SupportChat isAuthenticated={!!user} />
         </ThemeProvider>
         <Analytics />
