@@ -6,7 +6,10 @@ import { getTodayCheckins } from "@/lib/db/supabase/checkins";
 import { getUserPreferences } from "@/lib/db/mongo/user-preferences";
 import { saveCoachingResponse } from "@/lib/db/mongo/ai-coaching";
 import { loadPrompt } from "@/lib/ai/prompts";
+import { logRequest } from "@/lib/logging";
 import { NextResponse } from "next/server";
+
+const ROUTE = "/api/ai";
 
 /**
  * POST /api/ai
@@ -20,14 +23,24 @@ import { NextResponse } from "next/server";
  *   4. Stream via Vercel AI SDK streamText + @ai-sdk/anthropic
  *   5. onFinish: save completed nudge to MongoDB
  *   6. Return text/plain streaming response
+ *
+ * Note: duration_ms in the end log reflects time to stream setup, not total stream duration.
  */
 export async function POST(request: Request) {
+  const start = Date.now();
+  let userId: string | undefined;
+  logRequest({ route: ROUTE, method: "POST" });
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user)
+  userId = user?.id;
+
+  if (!user) {
+    logRequest({ route: ROUTE, method: "POST", status: 401, duration_ms: Date.now() - start });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   // Optional body params — gracefully handle missing or malformed body
   const body = (await request.json().catch(() => ({}))) as Record<
@@ -83,7 +96,6 @@ export async function POST(request: Request) {
 
     modelName = prompt.model;
 
-    const userId = user.id;
     const habitContext = {
       date: today,
       completed_habits: completedHabits,
@@ -100,7 +112,7 @@ export async function POST(request: Request) {
       maxOutputTokens: 256,
       onFinish: ({ text }) => {
         saveCoachingResponse({
-          user_id: userId,
+          user_id: user.id,
           type: "daily_nudge",
           habit_context: habitContext,
           content: text,
@@ -111,11 +123,13 @@ export async function POST(request: Request) {
       },
     });
 
+    logRequest({ route: ROUTE, method: "POST", status: 200, duration_ms: Date.now() - start, userId });
     return result.toTextStreamResponse();
   } catch (err) {
     console.error("[POST /api/ai]", err);
     const message =
       err instanceof Error ? err.message : "Failed to generate coaching nudge";
+    logRequest({ route: ROUTE, method: "POST", status: 500, duration_ms: Date.now() - start, userId, error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

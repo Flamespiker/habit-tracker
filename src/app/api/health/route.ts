@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/db/supabase/admin";
 import { connectToMongoDB } from "@/lib/db/mongo/client";
+import { logRequest } from "@/lib/logging";
+
+const ROUTE = "/api/health";
 
 type ServiceResult = { status: "ok" } | { status: "error"; error: string };
 
@@ -10,6 +13,9 @@ type ServiceResult = { status: "ok" } | { status: "error"; error: string };
  * Returns 200 if all systems are healthy, 503 if any check fails.
  */
 export async function GET() {
+  const start = Date.now();
+  logRequest({ route: ROUTE, method: "GET" });
+
   const [supabase, mongodb] = await Promise.all([
     (async (): Promise<ServiceResult> => {
       try {
@@ -38,9 +44,11 @@ export async function GET() {
   ]);
 
   const allOk = supabase.status === "ok" && mongodb.status === "ok";
+  const httpStatus = allOk ? 200 : 503;
 
+  logRequest({ route: ROUTE, method: "GET", status: httpStatus, duration_ms: Date.now() - start });
   return NextResponse.json(
     { supabase, mongodb, timestamp: new Date().toISOString() },
-    { status: allOk ? 200 : 503 },
+    { status: httpStatus },
   );
 }
