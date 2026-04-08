@@ -140,9 +140,11 @@ export async function getGoalHabitIds(
 
 /**
  * Updates fields on an existing goal and returns the updated row.
+ * Scoped to the given user — will not match a goal belonging to a different user.
  * Pass `client` to override the default server client.
  */
 export async function updateGoal(
+  userId: string,
   id: string,
   updates: UpdateGoalInput,
   client?: Client,
@@ -152,6 +154,7 @@ export async function updateGoal(
     .from("goals")
     .update(updates)
     .eq("id", id)
+    .eq("user_id", userId)
     .select()
     .single();
 

@@ -142,16 +142,21 @@ export async function createHabit(
 
 /**
  * Updates fields on an existing habit and returns the updated row.
+ * Scoped to the given user — will not match a habit belonging to a different user.
+ * Pass `client` to override the default server client.
  */
 export async function updateHabit(
+  userId: string,
   id: string,
   updates: UpdateHabitInput,
+  client?: Client,
 ): Promise<HabitRow> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
     .from("habits")
     .update(updates)
     .eq("id", id)
+    .eq("user_id", userId)
     .select()
     .single();
 
@@ -161,10 +166,20 @@ export async function updateHabit(
 
 /**
  * Deletes a habit by ID.
+ * Scoped to the given user — will not match a habit belonging to a different user.
+ * Pass `client` to override the default server client.
  */
-export async function deleteHabit(id: string): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase.from("habits").delete().eq("id", id);
+export async function deleteHabit(
+  userId: string,
+  id: string,
+  client?: Client,
+): Promise<void> {
+  const supabase = client ?? (await createClient());
+  const { error } = await supabase
+    .from("habits")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
 
   if (error) throw error;
 }

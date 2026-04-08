@@ -46,7 +46,7 @@ export default async function HabitDetailPage({
 
   const [habitRow, checkins] = await Promise.all([
     getHabitById(user.id, id, supabase),
-    getCheckins(id, thirtyDaysAgo, today, supabase),
+    getCheckins(user.id, id, thirtyDaysAgo, today, supabase),
   ]);
 
   if (!habitRow) notFound();

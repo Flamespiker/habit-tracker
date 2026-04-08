@@ -59,12 +59,10 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
     .toISOString()
     .split("T")[0];
 
-  const [goalRow, habitIds] = await Promise.all([
-    getGoalById(user.id, id, supabase),
-    getGoalHabitIds(id, supabase),
-  ]);
-
+  const goalRow = await getGoalById(user.id, id, supabase);
   if (!goalRow) notFound();
+
+  const habitIds = await getGoalHabitIds(id, supabase);
 
   // Only fetch habits and checkins if there are linked habits
   const linkedHabits =

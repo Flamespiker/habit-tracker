@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { getHabits, toHabit } from "@/lib/db/supabase/habits";
 import { getCheckinsForPeriod } from "@/lib/db/supabase/checkins";
+import { createAdminClient } from "@/lib/db/supabase/admin";
 import { getCoachingHistory } from "@/lib/db/mongo/ai-coaching";
 
 const MODEL_ID = "claude-sonnet-4-6";
@@ -120,9 +121,10 @@ export async function runSupportAgent(
 
   const getUserHabits = tool(
     async (): Promise<string> => {
+      const adminClient = createAdminClient();
       const [habitRows, checkins] = await Promise.all([
-        getHabits(userId),
-        getCheckinsForPeriod(userId, sevenDaysAgo, today),
+        getHabits(userId, adminClient),
+        getCheckinsForPeriod(userId, sevenDaysAgo, today, adminClient),
       ]);
       const habits = habitRows.map((row) => toHabit(row, checkins));
       const summary = habits.map((h) => ({

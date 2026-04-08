@@ -45,9 +45,11 @@ export async function getTodayCheckins(
 
 /**
  * Fetches check-ins for a habit within an inclusive date range.
+ * Scoped to the given user — will not return checkins belonging to a different user.
  * Dates must be ISO date strings (YYYY-MM-DD).
  */
 export async function getCheckins(
+  userId: string,
   habitId: string,
   startDate: string,
   endDate: string,
@@ -57,6 +59,7 @@ export async function getCheckins(
   const { data, error } = await supabase
     .from("checkins")
     .select("*")
+    .eq("user_id", userId)
     .eq("habit_id", habitId)
     .gte("date", startDate)
     .lte("date", endDate)
@@ -130,8 +133,11 @@ export async function getCheckinsForPeriod(
 
 /**
  * Updates `completed` or `notes` on an existing check-in and returns the updated row.
+ * Scoped to the given user — will not match a check-in belonging to a different user.
+ * Pass `client` to override the default server client.
  */
 export async function updateCheckin(
+  userId: string,
   id: string,
   updates: UpdateCheckinInput,
   client?: Client,
@@ -141,6 +147,7 @@ export async function updateCheckin(
     .from("checkins")
     .update(updates)
     .eq("id", id)
+    .eq("user_id", userId)
     .select()
     .single();
 
