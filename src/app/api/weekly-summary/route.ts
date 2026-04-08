@@ -15,14 +15,13 @@ const ROUTE = "/api/weekly-summary";
  */
 export async function POST() {
   const start = Date.now();
-  let userId: string | undefined;
   logRequest({ route: ROUTE, method: "POST" });
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  userId = user?.id;
+  const userId = user?.id;
 
   if (!user) {
     logRequest({ route: ROUTE, method: "POST", status: 401, duration_ms: Date.now() - start });
