@@ -37,11 +37,19 @@
           "parameters": [
             {
               "name": "apikey",
+<<<<<<< HEAD
               "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56cG5id2RkdXFmYmdqcXdrdHNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzYwMzIyMCwiZXhwIjoyMDg5MTc5MjIwfQ.PeIx8VLSJ13IvR4IKaLosPaoqChBwfFkfDhncE0OIAQ"
             },
             {
               "name": "Authorization",
               "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56cG5id2RkdXFmYmdqcXdrdHNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzYwMzIyMCwiZXhwIjoyMDg5MTc5MjIwfQ.PeIx8VLSJ13IvR4IKaLosPaoqChBwfFkfDhncE0OIAQ"
+=======
+              "value": "SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER"
+>>>>>>> f067213be19c84c0d9b312aa1c9594bb38ad53a9
             }
           ]
         },
@@ -78,7 +86,11 @@
           "parameters": [
             {
               "name": "x-api-key",
+<<<<<<< HEAD
               "value": "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"
+=======
+              "value": "ANTHROPIC_API_KEY_PLACEHOLDER"
+>>>>>>> f067213be19c84c0d9b312aa1c9594bb38ad53a9
             },
             {
               "name": "anthropic-version",
@@ -118,7 +130,11 @@
             },
             {
               "name": "x-internal-secret",
+<<<<<<< HEAD
               "value": "37f7&*kdufjri4io56859%%^jkfkf"
+=======
+              "value": "INTERNAL_API_SECRET_PLACEHOLDER"
+>>>>>>> f067213be19c84c0d9b312aa1c9594bb38ad53a9
             }
           ]
         },

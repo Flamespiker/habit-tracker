@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { getHabits, toHabit } from "@/lib/db/supabase/habits";
 import { getCheckinsForPeriod } from "@/lib/db/supabase/checkins";
+import { createAdminClient } from "@/lib/db/supabase/admin";
 import {
   getCoachingHistory,
   saveCoachingResponse,
@@ -39,8 +40,8 @@ export interface WeeklySummaryContent {
  * Calls readHabitData and readCoachingHistory tools to gather context,
  * generates a structured WeeklySummaryContent, and saves it to MongoDB.
  *
- * Must be called from a server-side context (API route or Server Component)
- * because the Supabase query functions rely on next/headers cookies.
+ * Must be called from a server-side context (API route or Server Component).
+ * Uses the Supabase service role client for data access — no cookie-based auth required.
  */
 export async function runWeeklySummaryAgent(
   userId: string,
@@ -57,9 +58,10 @@ export async function runWeeklySummaryAgent(
 
   const readHabitData = tool(
     async (): Promise<string> => {
+      const adminClient = createAdminClient();
       const [habitRows, checkins] = await Promise.all([
-        getHabits(userId),
-        getCheckinsForPeriod(userId, sevenDaysAgo, today),
+        getHabits(userId, adminClient),
+        getCheckinsForPeriod(userId, sevenDaysAgo, today, adminClient),
       ]);
       const habits = habitRows.map((row) => toHabit(row, checkins));
       // Return only the fields the LLM needs; strip large internal arrays
@@ -127,7 +129,9 @@ Steps:
   "recommendation": "<one specific, actionable focus for the coming week>"
 }
 
-Respond with ONLY the JSON object — no markdown fences, no extra commentary.`,
+Respond with ONLY the JSON object — no markdown fences, no extra commentary.
+
+CRITICAL: Your response must be ONLY the JSON object. No warnings, no explanations, no markdown fences. If data is unavailable, reflect that in the JSON fields themselves — do not add any text outside the JSON object.`,
   });
 
   // -------------------------------------------------------------------------
@@ -147,7 +151,11 @@ Respond with ONLY the JSON object — no markdown fences, no extra commentary.`,
 
   let summaryContent: WeeklySummaryContent;
   try {
-    summaryContent = JSON.parse(rawContent) as WeeklySummaryContent;
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error(`Agent returned no JSON content: ${rawContent}`);
+    }
+    summaryContent = JSON.parse(jsonMatch[0]) as WeeklySummaryContent;
   } catch {
     throw new Error(`Agent returned non-JSON content: ${rawContent}`);
   }

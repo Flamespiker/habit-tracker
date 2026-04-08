@@ -46,6 +46,7 @@ export function Navigation({ userEmail }: NavigationProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   function isActive(href: string) {
+    if (!pathname) return false;
     if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(href + "/");
   }
