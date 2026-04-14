@@ -3,10 +3,10 @@ import type { Database } from "@/lib/types/database.types";
 
 /**
  * Creates a Supabase client using the service role key.
- * Bypasses Row Level Security — use ONLY in server-side API routes.
- *
- * TODO (Week 6): remove all call sites and replace with the authenticated server client
- * once RLS policies and session-based auth are in place.
+ * Bypasses Row Level Security — intentionally used by server-side agents
+ * (weekly-summary-agent, support-agent) and /api/health that run without
+ * a user session cookie. Do NOT use in regular API routes or pages — those
+ * must use the authenticated server client from server.ts.
  */
 export function createAdminClient() {
   return createClient<Database>(
