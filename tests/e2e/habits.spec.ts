@@ -16,6 +16,14 @@ test.describe("Habits", () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto("/habits");
+    // Wait for the Server Component's Supabase fetch to complete and HabitsClient
+    // to hydrate — page.goto() resolves at the load event, before async SSR finishes.
+    // networkidle can fire while the loading skeleton is still showing; waiting for
+    // the real <h1> ensures the skeleton has been replaced by actual content.
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("heading", { name: "Habits" })).toBeVisible({
+      timeout: 30000,
+    });
   });
 
   test("displays the habits page with heading", async ({ page }) => {

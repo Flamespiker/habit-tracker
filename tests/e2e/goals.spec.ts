@@ -17,6 +17,14 @@ test.describe("Goals", () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto("/goals");
+    // Wait for the Server Component's Supabase fetch to complete and GoalsClient
+    // to hydrate — page.goto() resolves at the load event, before async SSR finishes.
+    // networkidle can fire while the loading skeleton is still showing; waiting for
+    // the real <h1> ensures the skeleton has been replaced by actual content.
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("heading", { name: "Goals" })).toBeVisible({
+      timeout: 30000,
+    });
   });
 
   test("displays the goals page with heading", async ({ page }) => {
@@ -48,7 +56,7 @@ test.describe("Goals", () => {
     // Wait for the dialog to close after form submission
     await page.waitForSelector("[role=dialog]", {
       state: "hidden",
-      timeout: 15000,
+      timeout: 30000,
     });
     await expect(page.getByText(goalTitle)).toBeVisible();
   });
@@ -100,7 +108,7 @@ test.describe("Goals", () => {
     test.skip(!hasGoalLink, "No goals exist to navigate to");
 
     await firstGoalLink.click();
-    await page.waitForURL(/\/goals\/.+/, { timeout: 10000 });
+    await page.waitForURL(/\/goals\/.+/, { timeout: 30000 });
     await expect(
       page.getByRole("link", { name: /Back to Goals/i }),
     ).toBeVisible();

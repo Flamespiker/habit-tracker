@@ -47,4 +47,5 @@ test.describe("Authentication", () => {
     await page.goto("/login");
     await page.waitForURL("/", { waitUntil: "commit" });
   });
+
 });
